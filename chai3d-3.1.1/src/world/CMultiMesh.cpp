@@ -1420,7 +1420,7 @@ cVector3d cMultiMesh::getVertexPos(unsigned int a_index)
     
 {
     // sanity check
-    if (a_index >= getNumVertices()) return (NULL);
+    if (a_index >= getNumVertices()) return (cVector3d(std::numeric_limits<double>::quiet_NaN()));
 
     // retrieve triangle
     unsigned int i, numMeshes;

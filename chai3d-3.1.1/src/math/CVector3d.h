@@ -142,24 +142,6 @@ public:
         (*this)(2) = a_vector(2);
     }
 
-	//--------------------------------------------------------------------------
-    /*!
-        \brief
-        Constructor of cVector3d.
-
-        \details
-        This constructor initializes a vector by passing an array of 3 doubles
-
-        \param a_xyz.
-    */
-    //--------------------------------------------------------------------------
-    cVector3d (double a_xyz[3])
-    {
-		m_data[0] = a_xyz[0];
-		m_data[1] = a_xyz[1];
-		m_data[2] = a_xyz[2];
-    }
-
 
 #ifdef C_USE_EIGEN
 
@@ -1146,48 +1128,6 @@ public:
         }
     }
 
-	//todo: joss, test!
-
-	//--------------------------------------------------------------------------
-	/*!
-	// TODO: Joss, write stuff here
-	// return projection of vector onto the passed argument vector
-
-	__WARNING:__ \n
-	The passed surface normal must not be close to or equal to (0,0,0) or a division by zero error
-	will occur. \n
-
-	*/
-	//--------------------------------------------------------------------------
-	inline cVector3d projectToVector(const cVector3d& a_projectTo)
-	{
-		return this->dot(a_projectTo) / a_projectTo.dot(a_projectTo) * a_projectTo;
-	}
-
-	//--------------------------------------------------------------------------
-	/*!
-	\brief
-	This method returns the projection of this vector onto a plane
-
-	\details
-	This method computes and returns the projection of the vector onto the plane defined by the surface normal \p a_normal.
-
-	__WARNING:__ \n
-	The passed surface normal must not be close to or equal to (0,0,0) or a division by zero error
-	will occur. \n
-
-	\param  a_normal  surface normal defining the plane to project onto.
-
-	\return Projected vector.
-	*/
-	//--------------------------------------------------------------------------
-	inline cVector3d projectToPlane(const cVector3d& a_normal)
-	{
-		return *this - this->projectToVector(a_normal);
-	}
-
-	// /todo: joss, test!
-
 
     //--------------------------------------------------------------------------
     /*!
@@ -1366,6 +1306,99 @@ public:
     {
         return m_data[a_index];
     }
+
+
+	//==============================================================================
+	// NEW (Joss):
+	//==============================================================================
+	
+
+	//--------------------------------------------------------------------------
+	/*!
+	\brief
+	Constructor of cVector3d.
+
+	\details
+	This constructor initializes a vector with x,y, and z components becoming the passed double
+
+	\param a_value.
+	*/
+	//--------------------------------------------------------------------------
+	cVector3d(const double& a_value)
+	{
+		m_data[0] = a_value;
+		m_data[1] = a_value;
+		m_data[2] = a_value;
+	}
+
+
+	//--------------------------------------------------------------------------
+	/*!
+	\brief
+	Constructor of cVector3d.
+	
+	\details
+	This constructor initializes a vector with the passed array of 3 doubles becoming x,y,and z
+	
+	\param a_xyz.
+	*/
+	//--------------------------------------------------------------------------
+	cVector3d(double a_xyz[3])
+	{
+		m_data[0] = a_xyz[0];
+		m_data[1] = a_xyz[1];
+		m_data[2] = a_xyz[2];
+	}
+	
+	//todo: joss, test!
+	
+	//--------------------------------------------------------------------------
+	/*!
+	// TODO: Joss, write stuff here
+	// return projection of vector onto the passed argument vector
+	
+	__WARNING:__ \n
+	The passed surface normal must not be close to or equal to (0,0,0) or a division by zero error
+	will occur. \n
+	
+	*/
+	//--------------------------------------------------------------------------
+	inline cVector3d projectToVector(cVector3d& a_projectTo)
+	{
+		double projection = this->dot(a_projectTo) / a_projectTo.dot(a_projectTo);
+		return cVector3d(
+			a_projectTo.m_data[0] * projection, 
+			a_projectTo.m_data[1] * projection, 
+			a_projectTo.m_data[2] * projection);
+	}
+	
+	//--------------------------------------------------------------------------
+	/*!
+	\brief
+	This method returns the projection of this vector onto a plane
+	
+	\details
+	This method computes and returns the projection of the vector onto the plane defined by the surface normal \p a_normal.
+	
+	__WARNING:__ \n
+	The passed surface normal must not be close to or equal to (0,0,0) or a division by zero error
+	will occur. \n
+	
+	\param  a_normal  surface normal defining the plane to project onto.
+	
+	\return Projected vector.
+	*/
+	//--------------------------------------------------------------------------
+	inline cVector3d projectToPlane(cVector3d& a_normal)
+	{
+		cVector3d vectorProjection = this->projectToVector(a_normal);
+		return cVector3d(
+			m_data[0] - vectorProjection.m_data[0],
+			m_data[1] - vectorProjection.m_data[1],
+			m_data[2] - vectorProjection.m_data[2]);
+	}
+
+	// /todo: joss, test!
 
 
     //--------------------------------------------------------------------------
