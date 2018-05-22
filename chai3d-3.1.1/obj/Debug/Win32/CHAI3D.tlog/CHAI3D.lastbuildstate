@@ -1,2 +1,2 @@
-#TargetFrameworkVersion=v4.0:PlatformToolSet=v140:EnableManagedIncrementalBuild=false:VCToolArchitecture=Native32Bit:WindowsTargetPlatformVersion=8.1
-Debug|Win32|C:\Users\cgvlab\Downloads\chai3d-3.1.1-VisualStudio (1)\chai3d-3.1.1\templates\dotNET\|
+#TargetFrameworkVersion=v4.0:PlatformToolSet=v140:EnableManagedIncrementalBuild=false:VCToolArchitecture=Native32Bit
+Debug|Win32|C:\Users\100586602\Desktop\Falcon Unity Development\unity-chai3d-master\unity-chai3d-master\chai3d-3.1.1\modules\Unity\|

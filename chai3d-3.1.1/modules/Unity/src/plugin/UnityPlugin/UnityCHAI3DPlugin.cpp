@@ -42,8 +42,33 @@ extern "C" {
 	// get spec of haptic device
 	cHapticDeviceInfo hapticDeviceInfo;
 
+
+	//
+	struct SpringProperties
+	{
+		bool enabled = false;
+		cVector3d restPosition;
+		double minDisplacement;
+		double maxDisplacement;
+		double max_force;
+
+	} springProperties;
+
+
+
 	bool prepareHaptics(double hapticScale)
 	{
+#ifdef _DEBUG
+		FILE* pConsole;
+		AllocConsole();
+		freopen_s(&pConsole, "CONOUT$", "wb", stdout);
+
+		time_t currentTime;
+		time(&currentTime);
+
+		std::cout << "Joss wuz here. Time: " << currentTime << std::endl;
+#endif
+
 		//--------------------------------------------------------------------------
 		// WORLD
 		//--------------------------------------------------------------------------
@@ -118,6 +143,11 @@ extern "C" {
 
 		// close haptic device
 		tool->stop();
+
+
+#ifdef _DEBUG
+		FreeConsole();
+#endif
 	}
 
 	void updateHaptics(void)
@@ -207,7 +237,7 @@ extern "C" {
 
 	bool isTouching(int objectId)
 	{
-		return tool->m_hapticPoint->isInContact(world->getChild(objectId+1));
+		return tool->m_hapticPoint->isInContact(world->getChild(objectId + 1));
 	}
 
 	bool isButtonPressed(int buttonId)
@@ -293,7 +323,7 @@ extern "C" {
 			}
 		}
 	}
-	
+
 	void setHapticPosition(double position[])
 	{
 		convertXYZToCHAI3D(position);
@@ -305,30 +335,42 @@ extern "C" {
 		tool->setLocalRot(cMatrix3d(rotation[2], -1 * rotation[0], -1 * rotation[1], C_EULER_ORDER_XYZ));
 	}
 
-}
+	void setGlobalForce(double force[])
+	{
+		convertXYZToCHAI3D(force);
+		tool->setDeviceGlobalForce(cVector3d(force));
+	}
 
-//--------------------------------------------------------------------------
-// UTils
-//--------------------------------------------------------------------------
+	void setSpringProperties(bool enabled, double position[], double minDist, double maxDist, double maxForce)
+	{
+		convertXYZToCHAI3D(position);
+		springProperties.restPosition = cVector3d(position);
+		//tool->setHomingPoint(cVector3(position));
+	}
 
-void convertXYZFromCHAI3D(double inputXYZ[])
-{
-	double val0 = inputXYZ[0];
-	double val1 = inputXYZ[1];
-	double val2 = inputXYZ[2];
+	//--------------------------------------------------------------------------
+	// Utils
+	//--------------------------------------------------------------------------
 
-	inputXYZ[0] = val1;
-	inputXYZ[1] = val2;
-	inputXYZ[2] = -1 * val0;
-}
+	void convertXYZFromCHAI3D(double inputXYZ[])
+	{
+		double val0 = inputXYZ[0];
+		double val1 = inputXYZ[1];
+		double val2 = inputXYZ[2];
 
-void convertXYZToCHAI3D(double inputXYZ[])
-{
-	double val0 = inputXYZ[0];
-	double val1 = inputXYZ[1];
-	double val2 = inputXYZ[2];
+		inputXYZ[0] = val1;
+		inputXYZ[1] = val2;
+		inputXYZ[2] = -1 * val0;
+	}
 
-	inputXYZ[0] = -1 * val2;
-	inputXYZ[1] = val0;
-	inputXYZ[2] =  val1;
+	void convertXYZToCHAI3D(double inputXYZ[])
+	{
+		double val0 = inputXYZ[0];
+		double val1 = inputXYZ[1];
+		double val2 = inputXYZ[2];
+
+		inputXYZ[0] = -1 * val2;
+		inputXYZ[1] = val0;
+		inputXYZ[2] = val1;
+	}
 }

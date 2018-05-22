@@ -142,6 +142,24 @@ public:
         (*this)(2) = a_vector(2);
     }
 
+	//--------------------------------------------------------------------------
+    /*!
+        \brief
+        Constructor of cVector3d.
+
+        \details
+        This constructor initializes a vector by passing an array of 3 doubles
+
+        \param a_xyz.
+    */
+    //--------------------------------------------------------------------------
+    cVector3d (double a_xyz[3])
+    {
+		m_data[0] = a_xyz[0];
+		m_data[1] = a_xyz[1];
+		m_data[2] = a_xyz[2];
+    }
+
 
 #ifdef C_USE_EIGEN
 
@@ -1127,6 +1145,48 @@ public:
             (*this)(2) = (*this)(2) * factor;
         }
     }
+
+	//todo: joss, test!
+
+	//--------------------------------------------------------------------------
+	/*!
+	// TODO: Joss, write stuff here
+	// return projection of vector onto the passed argument vector
+
+	__WARNING:__ \n
+	The passed surface normal must not be close to or equal to (0,0,0) or a division by zero error
+	will occur. \n
+
+	*/
+	//--------------------------------------------------------------------------
+	inline cVector3d projectToVector(const cVector3d& a_projectTo)
+	{
+		return this->dot(a_projectTo) / a_projectTo.dot(a_projectTo) * a_projectTo;
+	}
+
+	//--------------------------------------------------------------------------
+	/*!
+	\brief
+	This method returns the projection of this vector onto a plane
+
+	\details
+	This method computes and returns the projection of the vector onto the plane defined by the surface normal \p a_normal.
+
+	__WARNING:__ \n
+	The passed surface normal must not be close to or equal to (0,0,0) or a division by zero error
+	will occur. \n
+
+	\param  a_normal  surface normal defining the plane to project onto.
+
+	\return Projected vector.
+	*/
+	//--------------------------------------------------------------------------
+	inline cVector3d projectToPlane(const cVector3d& a_normal)
+	{
+		return *this - this->projectToVector(a_normal);
+	}
+
+	// /todo: joss, test!
 
 
     //--------------------------------------------------------------------------
