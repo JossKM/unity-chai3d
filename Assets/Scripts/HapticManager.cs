@@ -7,11 +7,12 @@ using System.Threading;
 
 public class HapticManager : MonoBehaviour
 {
-    public bool useHaptic;
+
+
+    private bool useHaptic;
     public static bool isHapticAvail;
-   
-    public GameObject leftHandIndex;
-    private Vector3 originalPosition;
+    public float workspaceScale;
+    public float toolRadius;
 
     public static bool IsCalibrated = false;
 
@@ -21,7 +22,7 @@ public class HapticManager : MonoBehaviour
         if (!useHaptic)
             isHapticAvail = false;
 
-        isHapticAvail = HapticNativePlugin.prepareHaptics(0.3d);
+        isHapticAvail = HapticNativePlugin.prepareHaptics(workspaceScale, toolRadius);
     }
 
 

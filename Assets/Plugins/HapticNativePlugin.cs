@@ -6,7 +6,7 @@ using UnityEngine;
 public class HapticNativePlugin
 {
     [DllImport("UnityPlugin")]
-    public static extern bool prepareHaptics(double hapticScale);
+    public static extern bool prepareHaptics(double hapticScale, double toolRadius);
 
     [DllImport("UnityPlugin")]
     public static extern void startHaptics();
@@ -120,5 +120,15 @@ public class HapticNativePlugin
         objectPos[2] = (double)(Mathf.Deg2Rad * rotation.z);
         setHapticRotation(objectPos);
     }
-
+    
+    [DllImport("UnityPlugin")]
+    protected static extern void setSpringProperties(bool enabled, double[] position, double minDist, double maxDist, double maxForce);
+    public static void SetSpringProperties(bool enabled, Vector3 anchorPosition, double minDist, double maxDist, double maxForce)
+    {
+        double[] anchorPos = new double[3];
+        anchorPos[0] = (double)(anchorPosition.x);
+        anchorPos[1] = (double)(anchorPosition.y);
+        anchorPos[2] = (double)(anchorPosition.z);
+        setSpringProperties(enabled, anchorPos, minDist, maxDist, maxForce);
+    }
 }

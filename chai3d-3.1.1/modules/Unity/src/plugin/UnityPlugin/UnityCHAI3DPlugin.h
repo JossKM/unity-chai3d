@@ -4,8 +4,30 @@
 #define FUNCDLL_API __declspec(dllimport) 
 #endif
 
+
 extern "C" {
-	FUNCDLL_API bool prepareHaptics(double hapticScale);
+
+	class Needle : public cToolCursor
+	{
+	public:
+		Needle(cWorld* a_parentWorld);
+
+		struct SpringProperties
+		{
+			bool enabled = false;
+			cVector3d restPosition;
+			double minDist;
+			double maxDist;
+			double maxForce;
+
+		} springProperties;
+
+		inline cVector3d computeSpringForce();
+
+		void computeInteractionForces() override;
+	};
+
+	FUNCDLL_API bool prepareHaptics(double hapticScale, double toolRadius);
 	FUNCDLL_API void startHaptics(void);
 	FUNCDLL_API void stopHaptics(void);
 	void updateHaptics(void);
@@ -33,6 +55,7 @@ extern "C" {
 	
 	FUNCDLL_API void setGlobalForce(double force[]);
 
+	// spring is in local coordinates
 	FUNCDLL_API void setSpringProperties(bool enabled, double position[], double minDist, double maxDist, double maxForce);
 
 	// Like Unity, Chai3D uses a right handed coordinate system, but -z x y
@@ -40,5 +63,4 @@ extern "C" {
 	FUNCDLL_API void convertXYZToCHAI3D(double inputXYZ[]);
 }
 
-
-void applySpringForce();
+inline double lmapd(float from, float fromMin, float fromMax, float toMin, float toMax);

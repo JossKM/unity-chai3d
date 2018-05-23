@@ -14,6 +14,16 @@ using namespace std;
 #include "UnityCHAI3DPlugin.h"
 //------------------------------------------------------------------------------
 
+// every b sec spam the console with a for 1s
+//#define printSometimes(s, interval) if((std::time(0)/1000) % interval) printf("%s", s); 
+
+#ifdef CONSOLE_SPAM
+#define printVec(name, vec) std::cout << name << ':' << vec.str() << std::endl;
+#define printJoss(name, s)  std::cout << name << ':' << s << std::endl;
+#else
+#define printVec(name, vec);
+#endif
+
 extern "C" {
 	// a world that contains all objects of the virtual environment
 	cWorld* world;
@@ -25,7 +35,7 @@ extern "C" {
 	cGenericHapticDevicePtr hapticDevice;
 
 	// a virtual tool representing the haptic device in the scene
-	cToolCursor* tool;
+	Needle* tool;
 
 	// define the radius of the tool (sphere)
 	double toolRadius;
@@ -43,20 +53,7 @@ extern "C" {
 	cHapticDeviceInfo hapticDeviceInfo;
 
 
-	//
-	struct SpringProperties
-	{
-		bool enabled = false;
-		cVector3d restPosition;
-		double minDisplacement;
-		double maxDisplacement;
-		double max_force;
-
-	} springProperties;
-
-
-
-	bool prepareHaptics(double hapticScale)
+	bool prepareHaptics(double hapticScale, double toolRadius)
 	{
 #ifdef _DEBUG
 		FILE* pConsole;
@@ -66,7 +63,7 @@ extern "C" {
 		time_t currentTime;
 		time(&currentTime);
 
-		std::cout << "Joss wuz here. Time: " << currentTime << std::endl;
+		std::cout << "Joss wuz here yo. Time: " << currentTime << std::endl;
 #endif
 
 		//--------------------------------------------------------------------------
@@ -90,17 +87,21 @@ extern "C" {
 		// retrieve information about the current haptic device
 		hapticDeviceInfo = hapticDevice->getSpecifications();
 
+#ifdef _DEBUG
+		std::cout << "===[ device info ]===" << std::endl; 
+		std::cout << "model id: " << hapticDeviceInfo.m_model << std::endl;
+		std::cout << "model name: " << hapticDeviceInfo.m_modelName << std::endl;
+		std::cout << "manufacturer: " << hapticDeviceInfo.m_manufacturerName << std::endl;
+#endif
+
 		// create a 3D tool and add it to the world
-		tool = new cToolCursor(world);
+		tool = new Needle(world);
 		world->addChild(tool);
 
 		// connect the haptic device to the tool
 		tool->setHapticDevice(hapticDevice);
 
-		// define the radius of the tool (sphere)
-		toolRadius = 0.025;
-
-		// define a radius for the tool
+		// define a radius for the tool (sphere)
 		tool->setRadius(toolRadius);
 
 		// enable if objects in the scene are going to rotate of translate
@@ -109,7 +110,7 @@ extern "C" {
 		tool->enableDynamicObjects(true);
 
 		// map the physical workspace of the haptic device to a larger virtual workspace.
-		tool->setWorkspaceRadius(hapticScale / 0.1);
+		tool->setWorkspaceRadius(hapticScale);
 
 		// haptic forces are enabled only if small forces are first sent to the device;
 		// this mode avoids the force spike that occurs when the application starts when 
@@ -118,6 +119,10 @@ extern "C" {
 
 		// start the haptic tool
 		tool->start();
+
+		// temp
+		double pos[3] = { 0.0 };
+		setSpringProperties(true, pos, 0.01, 0.5, 3.0);
 
 		return true;
 	}
@@ -344,8 +349,11 @@ extern "C" {
 	void setSpringProperties(bool enabled, double position[], double minDist, double maxDist, double maxForce)
 	{
 		convertXYZToCHAI3D(position);
-		springProperties.restPosition = cVector3d(position);
-		//tool->setHomingPoint(cVector3(position));
+		tool->springProperties.enabled = enabled;
+		tool->springProperties.restPosition = cVector3d(position);
+		tool->springProperties.minDist = minDist;
+		tool->springProperties.maxDist = maxDist;
+		tool->springProperties.maxForce = maxForce;
 	}
 
 	//--------------------------------------------------------------------------
@@ -373,4 +381,74 @@ extern "C" {
 		inputXYZ[1] = val0;
 		inputXYZ[2] = val1;
 	}
+
+}
+
+
+inline cVector3d Needle::computeSpringForce()
+{
+	cVector3d position = m_hapticPoint->m_algorithmFingerProxy->getProxyGlobalPosition();
+
+	//std::cout << "joss local pos: " << position.str() << std::endl;
+
+	// transform spring anchor position into local space
+	cVector3d springRestPosition = springProperties.restPosition;
+
+	
+
+	cVector3d displacementToTarget = springRestPosition - position;
+	double dist = displacementToTarget.length();
+	displacementToTarget.normalize();
+
+
+	double forceMagnitude = lmapd(dist, springProperties.minDist, springProperties.maxDist, 0.0, springProperties.maxForce);
+	forceMagnitude = cClamp(forceMagnitude, 0.0, springProperties.maxForce);
+
+	cVector3d springForce = displacementToTarget * forceMagnitude;
+	//std::cout << "joss springForce: " << springForce.str() << std::endl;
+
+	return springForce;
+}
+
+void Needle::computeInteractionForces()
+{
+	// compute interaction forces at haptic point in global coordinates
+	cVector3d interactionForce = m_hapticPoint->computeInteractionForces(m_deviceGlobalPos,
+		m_deviceGlobalRot,
+		m_deviceGlobalLinVel,
+		m_deviceGlobalAngVel);
+	cVector3d globalTorque(0.0, 0.0, 0.0);
+
+	//printVec("interactionForce before spring", interactionForce)
+
+	// apply custom spring effect
+	if (springProperties.enabled)
+	{
+		interactionForce += computeSpringForce();
+	}
+
+	// update computed forces to tool
+
+	printVec("interactionForce", interactionForce)
+
+	//printf("joss force: %s\n", interactionForce.str()); //m_deviceGlobalForce.str());
+	setDeviceGlobalForce(interactionForce);
+	setDeviceGlobalTorque(globalTorque);
+	setGripperForce(0.0);
+}
+
+
+inline double lmapd(float from, float fromMin, float fromMax, float toMin, float toMax)
+{
+	double fromAbs = from - fromMin;
+	double fromMaxAbs = fromMax - fromMin;
+	double normal = fromAbs / fromMaxAbs;
+	double toMaxAbs = toMax - toMin;
+	double toAbs = toMaxAbs * normal;
+	double to = toAbs + toMin;
+	return to;
+}
+
+Needle::Needle(cWorld * a_parentWorld) : cToolCursor(a_parentWorld)
+{
 }
