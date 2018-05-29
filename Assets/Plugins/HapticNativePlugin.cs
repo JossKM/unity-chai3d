@@ -121,4 +121,14 @@ public class HapticNativePlugin
         setHapticRotation(objectPos);
     }
 
+    [DllImport("UnityPlugin")]
+    protected static extern void setSpringProperties(bool enabled, double[] position, double minDist, double maxDist, double maxForce);
+    public static void SetSpringProperties(bool enabled, Vector3 anchorPosition, double minDist, double maxDist, double maxForce)
+    {
+        double[] anchorPos = new double[3];
+        anchorPos[0] = (double)(anchorPosition.x);
+        anchorPos[1] = (double)(anchorPosition.y);
+        anchorPos[2] = (double)(anchorPosition.z);
+        setSpringProperties(enabled, anchorPos, minDist, maxDist, maxForce);
+    }
 }

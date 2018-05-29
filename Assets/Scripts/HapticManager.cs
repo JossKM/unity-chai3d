@@ -7,6 +7,8 @@ using System.Threading;
 
 public class HapticManager : MonoBehaviour
 {
+    public double worldScale = 1.0d;
+
     public bool useHaptic;
     public static bool isHapticAvail;
    
@@ -21,7 +23,7 @@ public class HapticManager : MonoBehaviour
         if (!useHaptic)
             isHapticAvail = false;
 
-        isHapticAvail = HapticNativePlugin.prepareHaptics(0.3d);
+        isHapticAvail = HapticNativePlugin.prepareHaptics(worldScale);
     }
 
 

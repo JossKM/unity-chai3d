@@ -109,7 +109,7 @@ extern "C" {
 		tool->enableDynamicObjects(true);
 
 		// map the physical workspace of the haptic device to a larger virtual workspace.
-		tool->setWorkspaceRadius(hapticScale / 0.1);
+		tool->setWorkspaceRadius(hapticScale);
 
 		// haptic forces are enabled only if small forces are first sent to the device;
 		// this mode avoids the force spike that occurs when the application starts when 

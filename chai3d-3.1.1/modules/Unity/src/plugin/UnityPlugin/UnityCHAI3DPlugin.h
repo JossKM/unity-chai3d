@@ -6,6 +6,7 @@
 
 extern "C" {
 	FUNCDLL_API bool prepareHaptics(double hapticScale);
+
 	FUNCDLL_API void startHaptics(void);
 	FUNCDLL_API void stopHaptics(void);
 	void updateHaptics(void);
