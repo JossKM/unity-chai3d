@@ -14,6 +14,8 @@ using namespace std;
 #include "UnityCHAI3DPlugin.h"
 //------------------------------------------------------------------------------
 
+#define HAPTIC_DEBUG
+
 extern "C" {
 	// a world that contains all objects of the virtual environment
 	cWorld* world;
@@ -25,7 +27,7 @@ extern "C" {
 	cGenericHapticDevicePtr hapticDevice;
 
 	// a virtual tool representing the haptic device in the scene
-	cToolCursor* tool;
+	Needle* tool;
 
 	// define the radius of the tool (sphere)
 	double toolRadius;
@@ -42,23 +44,14 @@ extern "C" {
 	// get spec of haptic device
 	cHapticDeviceInfo hapticDeviceInfo;
 
-
-	//
-	struct SpringProperties
-	{
-		bool enabled = false;
-		cVector3d restPosition;
-		double minDisplacement;
-		double maxDisplacement;
-		double max_force;
-
-	} springProperties;
-
+#ifdef HAPTIC_DEBUG
+	bool lastForceEngagedState(false);
+#endif
 
 
 	bool prepareHaptics(double hapticScale)
 	{
-#ifdef _DEBUG
+#ifdef HAPTIC_DEBUG
 		FILE* pConsole;
 		AllocConsole();
 		freopen_s(&pConsole, "CONOUT$", "wb", stdout);
@@ -67,6 +60,8 @@ extern "C" {
 		time(&currentTime);
 
 		std::cout << "Joss wuz here. Time: " << currentTime << std::endl;
+
+		lastForceEngagedState = false;
 #endif
 
 		//--------------------------------------------------------------------------
@@ -74,12 +69,20 @@ extern "C" {
 		//--------------------------------------------------------------------------
 
 		// create a new world.
+		if (world)
+		{
+			delete world;
+		}
 		world = new cWorld();
 
 		//--------------------------------------------------------------------------
 		// HAPTIC DEVICES / TOOLS
 		//--------------------------------------------------------------------------
 
+		if (handler)
+		{
+			delete handler;
+		}
 		// create a haptic device handler
 		handler = new cHapticDeviceHandler();
 
@@ -91,14 +94,23 @@ extern "C" {
 		hapticDeviceInfo = hapticDevice->getSpecifications();
 
 		// create a 3D tool and add it to the world
-		tool = new cToolCursor(world);
+#ifdef HAPTIC_DEBUG
+		if (tool)
+		{
+			std::cout << "tool recreated? uh-oh." << std::endl;
+			//delete tool;
+		}
+#endif
+
+		tool = new Needle(world);
 		world->addChild(tool);
 
 		// connect the haptic device to the tool
 		tool->setHapticDevice(hapticDevice);
 
 		// define the radius of the tool (sphere)
-		toolRadius = 0.025;
+		//toolRadius = 0.025;
+		toolRadius = 0.0001;
 
 		// define a radius for the tool
 		tool->setRadius(toolRadius);
@@ -118,6 +130,32 @@ extern "C" {
 
 		// start the haptic tool
 		tool->start();
+
+#ifdef HAPTIC_DEBUG
+		
+		//print a list of all connected devices
+		{
+			std::cout << "list of connected devices:" << std::endl;
+			cGenericHapticDevicePtr someDevice; // to be passed by reference
+			for (auto i = 0u; i < handler->getNumDevices(); i++)
+			{
+				handler->getDevice(someDevice, i);
+				cHapticDeviceInfo info = someDevice->getSpecifications();
+				std::cout << "index " << i << ": model name: " << info.m_modelName << std::endl;
+			}
+
+
+		} // list all devices
+		
+
+		std::cout << "===[ world initialized ]===" << std::endl;
+		std::cout << "model id: " << hapticDeviceInfo.m_model << std::endl;
+		std::cout << "model name: " << hapticDeviceInfo.m_modelName << std::endl;
+		std::cout << "manufacturer: " << hapticDeviceInfo.m_manufacturerName << std::endl;
+
+		std::cout << "device ptr:" << hapticDevice << std::endl;
+#endif
+
 
 		return true;
 	}
@@ -144,10 +182,15 @@ extern "C" {
 		// close haptic device
 		tool->stop();
 
+		//delete handler;
+		//delete tool;
+		//delete world;
 
-#ifdef _DEBUG
+
+#ifdef HAPTIC_DEBUG
 		FreeConsole();
 #endif
+		//exit(0);
 	}
 
 	void updateHaptics(void)
@@ -195,6 +238,7 @@ extern "C" {
 
 			// send forces to haptic device
 			tool->applyToDevice();
+
 		}
 
 		// exit haptics thread
@@ -344,8 +388,25 @@ extern "C" {
 	void setSpringProperties(bool enabled, double position[], double minDist, double maxDist, double maxForce)
 	{
 		convertXYZToCHAI3D(position);
-		springProperties.restPosition = cVector3d(position);
-		//tool->setHomingPoint(cVector3(position));
+
+		tool->springProperties.enabled = enabled;
+		tool->springProperties.restPosition = cVector3d(position);
+		tool->springProperties.minDist = minDist;
+		tool->springProperties.maxDist = maxDist;
+		tool->springProperties.maxForce = maxForce;
+	}
+
+	void setAxialConstraint(bool enabled, double position[], double direction[], double minDist, double maxDist, double maxForce)
+	{
+		convertXYZToCHAI3D(position);
+		convertXYZToCHAI3D(direction);
+
+		tool->axialConstraint.enabled = enabled;
+		tool->axialConstraint.position = cVector3d(position);
+		tool->axialConstraint.direction = cVector3d(direction);
+		tool->axialConstraint.minDist = minDist;
+		tool->axialConstraint.maxDist = maxDist;
+		tool->axialConstraint.maxForce = maxForce;
 	}
 
 	//--------------------------------------------------------------------------
@@ -373,4 +434,93 @@ extern "C" {
 		inputXYZ[1] = val0;
 		inputXYZ[2] = val1;
 	}
+
+
+
+	///////////////////////////////////////////
+	// Needle
+	///////////////////////////////////////////
+
+	inline cVector3d Needle::computeSpringForce(cVector3d& springRestPosition, double& minDist, double& maxDist, double& maxForce)
+	{
+		cVector3d position = m_hapticPoint->m_algorithmFingerProxy->getDeviceGlobalPosition();
+
+		cVector3d displacementToTarget = springRestPosition - position;
+		double dist = displacementToTarget.length();
+		displacementToTarget.normalize();
+
+		double forceMagnitude = lmapd(dist, minDist, maxDist, 0.0, maxForce);
+		forceMagnitude = cClamp(forceMagnitude, 0.0, maxForce);
+
+		cVector3d springForce = displacementToTarget * forceMagnitude;
+
+		return springForce;
+	}
+
+	inline cVector3d Needle::computeAxialConstraintForce(cVector3d & targetPos, cVector3d & targetDir, double & minDist, double & maxDist, double & maxForce)
+	{
+		cVector3d position = m_hapticPoint->m_algorithmFingerProxy->getProxyGlobalPosition();
+
+		cVector3d displacementToTarget = targetPos - position;
+
+		displacementToTarget = displacementToTarget.projectToPlane(targetDir);
+	
+		double dist = displacementToTarget.length();
+		displacementToTarget.normalize();
+
+		double forceMagnitude = lmapd(dist, minDist, maxDist, 0.0, maxForce);
+		forceMagnitude = cClamp(forceMagnitude, 0.0, maxForce);
+
+		cVector3d springForce = displacementToTarget * forceMagnitude;
+
+		return springForce;
+	}
+
+	void Needle::computeInteractionForces()
+	{
+		// compute interaction forces at haptic point in global coordinates
+		cVector3d interactionForce = m_hapticPoint->computeInteractionForces(m_deviceGlobalPos,
+			m_deviceGlobalRot,
+			m_deviceGlobalLinVel,
+			m_deviceGlobalAngVel);
+		cVector3d globalTorque(0.0, 0.0, 0.0);
+
+		// apply custom spring effect
+		if (springProperties.enabled)
+		{
+			interactionForce += computeSpringForce(springProperties.restPosition, springProperties.minDist, springProperties.maxDist, springProperties.maxForce);
+			//cVector3d dir(1.0, 0.0, 0.0);
+			//interactionForce += computeAxialConstraintForce(springProperties.restPosition, dir, springProperties.minDist, springProperties.maxDist, springProperties.maxForce);
+		}
+
+		if (axialConstraint.enabled)
+		{
+			interactionForce += computeAxialConstraintForce(axialConstraint.position, axialConstraint.direction, axialConstraint.minDist, axialConstraint.maxDist, axialConstraint.maxForce);
+		}
+
+		// avoid trying to apply more force than possible
+		interactionForce.clamp(hapticDeviceInfo.m_maxLinearForce);
+		
+		setDeviceGlobalForce(interactionForce);
+		setDeviceGlobalTorque(globalTorque);
+		setGripperForce(0.0);
+	}
+
+	Needle::Needle(cWorld * a_parentWorld) : cToolCursor(a_parentWorld)
+	{
+	}
+
+} // extern 
+
+inline double lmapd(float from, float fromMin, float fromMax, float toMin, float toMax)
+{
+	double fromAbs = from - fromMin;
+	double fromMaxAbs = fromMax - fromMin;
+	double normal = fromAbs / fromMaxAbs;
+	double toMaxAbs = toMax - toMin;
+	double toAbs = toMaxAbs * normal;
+	double to = toAbs + toMin;
+	return to;
 }
+
+#undef JOSSDEBUG

@@ -12,10 +12,8 @@ public class HapticManager : MonoBehaviour
     public bool useHaptic;
     public static bool isHapticAvail;
    
-    public GameObject leftHandIndex;
     private Vector3 originalPosition;
-
-    public static bool IsCalibrated = false;
+    public GameObject workspaceVisualizer;
 
     // Use this for initialization
     private void Awake()
@@ -24,6 +22,11 @@ public class HapticManager : MonoBehaviour
             isHapticAvail = false;
 
         isHapticAvail = HapticNativePlugin.prepareHaptics(worldScale);
+
+        if (workspaceVisualizer != null)
+        {
+            workspaceVisualizer.transform.localScale = new Vector3((float)worldScale, (float)worldScale, (float)worldScale) * 2.0f;
+        }
     }
 
 

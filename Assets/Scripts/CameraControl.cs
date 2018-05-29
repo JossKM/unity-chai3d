@@ -3,24 +3,22 @@ using System.Collections;
 
 public class CameraControl : MonoBehaviour
 {
+    public bool moveWorkspace = true;
+
     public float moveSpeed = 1.0f;
     public Transform workspace;
 
 	private float rotationX = 0f;
 	private float rotationY = 0f;
+    
+    private Transform deviceOrigin;
 
-    private Vector3 previousPosition;
-    private Vector3 originalPosition;
-
-    private Vector3 previousRotation;
-
+    public Vector3 workspaceOffset; // offset of the workspace from the camera
 
     private void Start()
     {
-        workspace.parent = this.transform;
-        previousPosition = workspace.position;
-        originalPosition = workspace.position;
-        UpdateHapticPosition();
+        deviceOrigin = GameObject.Find("Haptic Origin").transform;
+        workspaceOffset = workspace.position - transform.position;
     }
 
 	// Update is called once per frame
@@ -53,29 +51,23 @@ public class CameraControl : MonoBehaviour
 	    if (Input.GetKey(KeyCode.LeftControl))
 	        transform.Translate(0f, -moveSpeed * Time.deltaTime, 0f, Space.World);
 
+	    if (moveWorkspace)
+	    {
+	        workspace.position = transform.position + workspaceOffset;
 
-        UpdateHapticPosition();
-        UpdateHapticRotation();
+            UpdateHapticPosition();
+            UpdateHapticRotation();
+	    }
 	}
 
     private void UpdateHapticPosition()
     {
-        if (workspace == null)
-            return;
-        if (previousPosition != workspace.position)
-        {
-            HapticNativePlugin.SetHapticPosition((workspace.position - originalPosition));
-        }
-        previousPosition = workspace.position;
+        HapticNativePlugin.SetHapticPosition((workspace.position - deviceOrigin.position));
     }
 
     private void UpdateHapticRotation()
     {
-        if (previousRotation != this.transform.rotation.eulerAngles)
-        {
-            HapticNativePlugin.SetHapticRotation(this.transform.rotation.eulerAngles);
-        }
-        previousRotation = this.transform.rotation.eulerAngles;
+        HapticNativePlugin.SetHapticRotation(this.transform.rotation.eulerAngles);
     }
 
 }
