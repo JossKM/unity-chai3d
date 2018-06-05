@@ -489,7 +489,7 @@ namespace NeedleSimPlugin
 			object->m_material->setViscosity(viscosity); // set property
 		}
 
-		void addMembraneEffect(int objectID, double a_resistance, double a_friction_static, double a_friction_dynamic, double maxForce, double distanceToMaxForce, double a_springMass)
+		void addMembraneEffect(int objectID, double a_resistance, double a_friction_static, double a_friction_dynamic, double maxForce, double distanceToMaxForce, double a_springMass, double a_penetrationThreshold)
 		{
 			//if (objectID < 0 || objectID >= world->getNumChildren())
 			//{
@@ -508,6 +508,7 @@ namespace NeedleSimPlugin
 			effect->spring.maxForce = maxForce;
 			effect->spring.maxDist = distanceToMaxForce;
 			effect->m_springMass = a_springMass;
+			effect->m_penetrationThreshold = a_penetrationThreshold;
 
 			// link it to the object
 			object->addEffect(effect);
@@ -640,24 +641,9 @@ namespace NeedleSimPlugin
 			if (axialConstraint.enabled)
 			{
 				cVector3d axialConstraintForce = computeAxialConstraintForce(devicePos, axialConstraint.position, axialConstraint.direction, axialConstraint.minDist, axialConstraint.maxDist, axialConstraint.maxForce);
+				// need a better mapping to allow axial constraint to do its job. Look to diminishing returns from video games? 
 				
-
-				// todo:
-			//	double magAxialConstraintForce = min(axialConstraintForce.length(), hapticDeviceInfo.m_maxLinearForce);
-			//
-			//	//double magInteractionForce = interactionForce.length();
-			//
-			//
-			//	// prioritize the axial constraint over all else. 
-			//	cVector3d netForce = axialConstraintForce + interactionForce;
-			//
-			//	//if (netForce.lengthsq() > hapticDeviceInfo.m_maxLinearForce * hapticDeviceInfo.m_maxLinearForce)
-			//	//{
-			//		interactionForce = lmap(magAxialConstraintForce, 0.0, hapticDeviceInfo.m_maxLinearForce, netForce, axialConstraintForce);
-			//	//}
-
-				// need a better mapping to allow axial constraint to do its job. Look to diminishing returns from video games 
-					interactionForce += axialConstraintForce;
+				interactionForce += axialConstraintForce;
 			}
 
 			// avoid trying to apply more force than possible
@@ -713,6 +699,8 @@ namespace NeedleSimPlugin
 		spring.minDist = 0.0;
 		spring.maxDist = 0.01;
 		spring.maxForce = 9.0;
+		m_wasInsideLastFrame = false;
+		m_membranePenetrated = false;
 	}
 
 	SpringyMembrane::~SpringyMembrane()
@@ -730,44 +718,61 @@ namespace NeedleSimPlugin
 			if (!m_wasInsideLastFrame)
 			{
 				m_wasInsideLastFrame = true;
+
 				// initialize the spring on the device position. 
 				// the tool is at first pulled back towards its initial entry point
-				spring.restPosition = a_toolPos;
+				spring.restPosition = tool->m_hapticPoint->getLocalPosGoal(); //a_toolPos;
 			}
-			else
+			
+			//double devicePos[3];
+			//getDevicePosition(devicePos);
+			cVector3d pos = tool->m_hapticPoint->getLocalPosGoal();
+
+			// apply force onto the haptic device, pulling the tool toward the spring tail, wherever it may be
+			cVector3d force = computeSpringForce(pos, spring.restPosition, spring.minDist, spring.maxDist, spring.maxForce);
+			a_reactionForce = force;
+
+			double forceMag = force.length();
+
+			if (forceMag >= m_penetrationThreshold && !m_membranePenetrated)
 			{
-				// pull the tool toward the spring tail
-				cVector3d force = computeSpringForce(a_toolPos, spring.restPosition, spring.minDist, spring.maxDist, spring.maxForce);
-				a_reactionForce = force;
+				m_membranePenetrated = true;
+				std::cout << "membrane penetrated!" << std::endl;
+			}
 
-				//cVector3d springPull = -force;
-				double forceMag = force.length();
-
+			//if penetrated, allow the spring to move.
+			if (m_membranePenetrated)
+			{
 				double maxStaticFrictionOutput = m_resistance * m_friction_static;
 
+				if (forceMag > maxStaticFrictionOutput)
+				{
+					m_useDynamicFriction = true;
+				}
+
 				// static friction
-				if (forceMag < maxStaticFrictionOutput)
+				if (!m_useDynamicFriction)
 				{
 					// don't move. Do nothing.
 				}
 				else // dynamic friction
 				{
-					//cVector3d pos = a_toolPos;
-					//spring.restPosition = lerpd(spring.restPosition, pos, (0.995) * deltaTime);
-
 					double maxDynamicFrictionOutput = m_resistance * m_friction_dynamic;
-					
+
 					double netForceMag = max(0.0, forceMag - maxDynamicFrictionOutput);
-					
-					//lerpd()
-					
+
+					if (netForceMag <= 0.00001)
+					{
+						m_useDynamicFriction = false;
+						std::cout << "back to static friction!" << std::endl;
+					}
+
 					// the spring tail moves toward the tool
-					
 					double acceleration = netForceMag / m_springMass;
-					
+
 					// don't bother with actual velocity. just move the spring along the acceleration vector.
 					cVector3d velocity = -acceleration * cNormalize(force) * deltaTime;
-					
+
 					spring.restPosition += velocity * deltaTime;
 				}
 			}
@@ -775,9 +780,16 @@ namespace NeedleSimPlugin
 		else
 		{
 			m_wasInsideLastFrame = false;
+			m_membranePenetrated = false;
+
 			a_reactionForce.zero();
 			return false;
 		}
+	}
+
+	bool SpringyMembrane::isPenetrated()
+	{
+		return m_membranePenetrated;
 	}
 
 }

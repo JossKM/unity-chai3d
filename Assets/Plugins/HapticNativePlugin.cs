@@ -1,6 +1,4 @@
-﻿// imports the C++ DLL code, wraps it up for use in Unity.
-// starts with capital --> Unity
-// starts with lowercase --> Plugin
+﻿// imports the C++ DLL code, includes wrapper functions for easy use in Unity.
 
 using System;
 using System.Runtime.InteropServices;
@@ -9,14 +7,6 @@ using UnityEngine;
 
 public class HapticNativePlugin
 {
-    [DllImport("UnityPlugin")]
-    public static extern bool prepareHaptics(double hapticScale);
-
-    [DllImport("UnityPlugin")]
-    public static extern void startHaptics();
-
-    [DllImport("UnityPlugin")]
-    public static extern void stopHaptics();
 
     [DllImport("UnityPlugin")]
     protected static extern void getProxyPosition(double[] array);
@@ -37,12 +27,6 @@ public class HapticNativePlugin
         getDevicePosition(arrayToUse);
         return new Vector3((float) arrayToUse[0], (float) arrayToUse[1], (float) arrayToUse[2]);
     }
-
-    [DllImport("UnityPlugin")]
-    public static extern bool isButtonPressed(int buttonId);
-
-    [DllImport("UnityPlugin")]
-    public static extern bool isTouching(int objectId);
 
     public static bool IsInContact()
     {
@@ -184,14 +168,30 @@ public class HapticNativePlugin
         setAxialConstraint(enabled, anchorPos, anchorDir, minDist, maxDist, maxForce);
     }
 
+    // wrapperless
+
+    [DllImport("UnityPlugin")]
+    public static extern bool prepareHaptics(double hapticScale);
+
+    [DllImport("UnityPlugin")]
+    public static extern void startHaptics();
+
+    [DllImport("UnityPlugin")]
+    public static extern void stopHaptics();
+
+    [DllImport("UnityPlugin")]
+    public static extern bool isButtonPressed(int buttonId);
+
+    [DllImport("UnityPlugin")]
+    public static extern bool isTouching(int objectId);
+
     [DllImport("UnityPlugin")]
     public static extern void setObjectProperties(int objectID, double stiffness, double friction_static,
         double friction_dynamic, double viscosity);
-
 
     [DllImport("UnityPlugin")]
     public static extern void addViscosityEffect(int objectID, double viscosity);
 
     [DllImport("UnityPlugin")]
-    public static extern void addMembraneEffect(int objectID, double a_resistance, double a_friction_static, double a_friction_dynamic, double maxForce, double distanceToMaxForce, double a_springMass);
+    public static extern void addMembraneEffect(int objectID, double a_resistance, double a_friction_static, double a_friction_dynamic, double maxForce, double distanceToMaxForce, double a_springMass, double a_penetrationThreshold);
 }

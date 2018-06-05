@@ -64,16 +64,26 @@ public class ArduinoInterface : MonoBehaviour
                 if (lastMessage.StartsWith(plungerMessageString))
                 {
                     string valueStr = lastMessage.Remove(0, plungerMessageString.Length);
-                    int value = int.Parse(valueStr);
 
-                    //Debug.Log(value);
+                    try
+                    {
+                        int value = int.Parse(valueStr);
 
-                    Vector3 plungerPos = syringePlunger.localPosition;
 
-                    float plungerDepth = Mathf.Lerp(minPos, maxPos, Mathf.InverseLerp(0, 1023, value));
-                    plungerPos.y = plungerDepth;
+                        Vector3 plungerPos = syringePlunger.localPosition;
 
-                    syringePlunger.localPosition = plungerPos;
+                        float plungerDepth = Mathf.Lerp(minPos, maxPos, Mathf.InverseLerp(0, 1023, value));
+                        plungerPos.y = plungerDepth;
+
+                        syringePlunger.localPosition = plungerPos;
+                        
+                        //Debug.Log(value);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                        throw;
+                    }
                 }
             }
         }

@@ -54,7 +54,7 @@ namespace NeedleSimPlugin
 			bool m_isPenetrating = false;
 		};
 
-		// a spring that moves. the "head" is attached to the haptic tool, the "tail" is attached to a mass that has static and dynamic friction modelled on it.
+		// a spring that moves. one end, the "head", is attached to the haptic tool, the "tail" is attached to a mass that has static and dynamic friction modelled on it.
 		class SpringyMembrane : public cGenericEffect
 		{
 		public:
@@ -63,24 +63,29 @@ namespace NeedleSimPlugin
 
 			virtual bool computeForce(const cVector3d &a_toolPos, const cVector3d &a_toolVel, const unsigned int &a_toolID, cVector3d &a_reactionForce);
 
-			Spring spring;
+			bool isPenetrated();
 
-			double penetrationThreshold;
+			///////////////////////
+			// properties
+
+			Spring spring; // for now, this spring affects both the membrane penetration itself and its properties after penetration
+
+			double m_penetrationThreshold = 7.0; // force required to penetrate the tissue
 			double m_resistance = 9.0; // amount of friction force the spring tail can muster. set this to the maximum device force output
 			double m_friction_static = 0.2; // how much it takes to move the spring at all 0.5 means half of resistance value
-			// how slowly the spring tail catches up to the device position
-			double m_friction_dynamic = 0.1;
+			double m_friction_dynamic = 0.1; // affects how slowly the spring tail catches up to the device position
 			double m_springMass = 1.0;
 
-			// at 1.0 friction the spring does not move.
-			// at 0 friction the spring 
-
 		private:
+
+			bool m_useDynamicFriction = false;
+
+			// for tracking the change from not touching to touching
 			bool m_wasInsideLastFrame = false;
 
+			// not the same as m_wasInsideLastFrame
+			bool m_membranePenetrated = false;
 		};
-
-
 
 		FUNCDLL_API bool prepareHaptics(double hapticScale);
 
@@ -105,7 +110,7 @@ namespace NeedleSimPlugin
 		FUNCDLL_API void setObjectProperties(int objectID, double stiffness, double friction_static, double friction_dynamic, double viscosity);
 
 		FUNCDLL_API void addViscosityEffect(int objectID, double viscosity);
-		FUNCDLL_API void addMembraneEffect(int objectID, double a_resistance, double a_friction_static, double a_friction_dynamic, double maxForce, double distanceToMaxForce, double a_springMass);
+		FUNCDLL_API void addMembraneEffect(int objectID, double a_resistance, double a_friction_static, double a_friction_dynamic, double maxForce, double distanceToMaxForce, double a_springMass, double a_penetrationThreshold);
 
 		// move all objects in the world
 		FUNCDLL_API void translateObjects(double translation[]);
