@@ -43,7 +43,7 @@ namespace NeedleSimPlugin
 
 			} axialConstraint;
 
-			inline cVector3d computeAxialConstraintForce(cVector3d& targetPos, cVector3d& targetDir, double& minDist, double& maxDist, double& maxForce);
+			inline cVector3d computeAxialConstraintForce(cVector3d position, cVector3d& targetPos, cVector3d& targetDir, double& minDist, double& maxDist, double& maxForce);
 
 
 			void computeInteractionForces() override;
@@ -80,6 +80,8 @@ namespace NeedleSimPlugin
 
 		};
 
+
+
 		FUNCDLL_API bool prepareHaptics(double hapticScale);
 
 		FUNCDLL_API void startHaptics(void);
@@ -97,6 +99,8 @@ namespace NeedleSimPlugin
 		// return a world ID to the added object (literally just its index in the cWorld children vector).
 		// will also break if you try to parent objects using Chai3d's parenting system, since it is assumed all objects are part children of the world.
 		FUNCDLL_API int addObject(double objectPos[], double objectScale[], double objectRotation[], double vertPos[][3], double normals[][3], int vertNum, int tris[][3], int triNum);
+
+		FUNCDLL_API int addBoxObject(double objectPos[], double objectScale[], double objectRotation[]);
 
 		FUNCDLL_API void setObjectProperties(int objectID, double stiffness, double friction_static, double friction_dynamic, double viscosity);
 

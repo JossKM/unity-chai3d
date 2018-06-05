@@ -24,13 +24,15 @@ public class ArduinoInterface : MonoBehaviour
     {
         stream = new SerialPort(portName, 9600);
         stream.ReadTimeout = 20;
+
+        // connect to Arduino via Serial Port
         try
         {
             stream.Open();
 
             Debug.Log("Arduino connected on port: " + portName);
         }
-        catch (IOException e)
+        catch (IOException)
         {
             Debug.Log("ERROR: No device found on port: " + portName);
             return;
@@ -39,6 +41,7 @@ public class ArduinoInterface : MonoBehaviour
 
     void Update()
     {
+        // if connected to arduino
         if (stream.IsOpen)
         {
             if (Input.GetKeyUp(KeyCode.A))
@@ -72,6 +75,19 @@ public class ArduinoInterface : MonoBehaviour
 
                     syringePlunger.localPosition = plungerPos;
                 }
+            }
+        }
+        else
+        {
+            // attempt to connect again
+            try
+            {
+                stream.Open();
+
+                Debug.Log("Arduino connected on port: " + portName);
+            }
+            catch (IOException)
+            {
             }
         }
     }

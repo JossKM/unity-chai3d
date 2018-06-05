@@ -2,7 +2,7 @@
 using System.Collections;
 using UnityEngine.Assertions;
 
-[RequireComponent(typeof(TouchableObject))]
+[RequireComponent(typeof(HapticObject))]
 public class HapticMembraneEffect : MonoBehaviour
 {
     private int objectId;
@@ -18,13 +18,12 @@ public class HapticMembraneEffect : MonoBehaviour
     // Use this for initialization
     void Start ()
     {
-        Assert.AreNotEqual(springMass, 0.0);
-
-        objectId = GetComponent<TouchableObject>().objectId;
-
-        HapticNativePlugin.addViscosityEffect(objectId, GetComponent<TouchableObject>().viscosity);
+        //Assert.AreNotEqual(springMass, 0.0);
+        //
+        objectId = GetComponent<HapticObject>().objectId;
+        
+        HapticNativePlugin.addViscosityEffect(objectId, GetComponent<HapticObject>().viscosity);
         HapticNativePlugin.addMembraneEffect(objectId, resistance, friction_static, friction_dynamic, maxForce, distanceToMaxForce, springMass);
-
     }
 	
 	// Update is called once per frame

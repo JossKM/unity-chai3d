@@ -15,6 +15,8 @@ public class HapticManager : MonoBehaviour
     private Vector3 originalPosition;
     public GameObject workspaceVisualizer;
 
+    public GameObject devicePositionGameObject;
+
     // Use this for initialization
     private void Awake()
     {
@@ -46,6 +48,9 @@ public class HapticManager : MonoBehaviour
     {
         if (isHapticAvail)
             this.transform.localPosition = HapticNativePlugin.GetProxyPosition();
+
+        if(devicePositionGameObject!= null)
+             devicePositionGameObject.transform.localPosition = HapticNativePlugin.GetDevicePosition();
     }
     
 }

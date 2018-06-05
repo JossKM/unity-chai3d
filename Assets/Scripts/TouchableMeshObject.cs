@@ -1,16 +1,19 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class TouchableObject : MonoBehaviour {
 
+public abstract class HapticObject : MonoBehaviour
+{
     public int objectId = -1;
 
     public double friction_static = 0.8;
     public double friction_dynamic = 0.6;
     public double stiffness = 0.7;
     public double viscosity = 0.0;
+}
 
-    // Use this for initialization
+public class TouchableMeshObject : HapticObject
+{
     void Start()
     {
 

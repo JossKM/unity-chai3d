@@ -161,8 +161,8 @@ namespace NeedleSimPlugin
 			std::cout << "model id: " << hapticDeviceInfo.m_model << std::endl;
 			std::cout << "model name: " << hapticDeviceInfo.m_modelName << std::endl;
 			std::cout << "manufacturer: " << hapticDeviceInfo.m_manufacturerName << std::endl;
-
 			std::cout << "device ptr:" << hapticDevice << std::endl;
+			std::cout << "number of world objects: " << world->getNumChildren() << std::endl;
 #endif
 
 
@@ -336,9 +336,6 @@ namespace NeedleSimPlugin
 			// device and the virtual workspace defined for the tool
 			double workspaceScaleFactor = tool->getWorkspaceScaleFactor();
 
-			// stiffness properties
-			double maxStiffness = hapticDeviceInfo.m_maxLinearStiffness / workspaceScaleFactor;
-
 			cMesh* object = new cMesh();
 
 			// set vertices
@@ -361,11 +358,6 @@ namespace NeedleSimPlugin
 				object->newTriangle(triPos[i][2], triPos[i][1], triPos[i][0]);
 			}
 
-			// add object to world
-			world->addChild(object);
-
-			int objectID = (world->getNumChildren() - 1);
-
 			// set the position of the object at the center of the world
 			convertXYZToCHAI3D(objectPos);
 			object->setLocalPos(objectPos[0], objectPos[1], objectPos[2]);
@@ -375,6 +367,9 @@ namespace NeedleSimPlugin
 
 			// rotate object
 			object->rotateExtrinsicEulerAnglesDeg(objectRotation[2], -1 * objectRotation[0], -1 * objectRotation[1], C_EULER_ORDER_XYZ);
+
+			// stiffness property
+			double maxStiffness = hapticDeviceInfo.m_maxLinearStiffness / workspaceScaleFactor;
 
 			// define a default stiffness for the object
 			object->m_material->setStiffness(0.3 * maxStiffness);
@@ -397,6 +392,66 @@ namespace NeedleSimPlugin
 			// compute collision detection algorithm
 			object->createAABBCollisionDetector(toolRadius);
 
+
+			// add object to world
+			world->addChild(object);
+
+			int objectID = (world->getNumChildren() - 1);
+
+
+			std::cout << "mesh object created! ID: " << objectID << std::endl;
+			return objectID;
+		}
+
+		int addBoxObject(double objectPos[], double objectScale[], double objectRotation[])
+		{
+			// create the box and include the size
+			convertXYZToCHAI3D(objectScale);
+			cShapeBox* box = new cShapeBox(objectScale[0], objectScale[1], objectScale[2]);
+
+			// read the scale factor between the physical workspace of the haptic
+			// device and the virtual workspace defined for the tool
+			double workspaceScaleFactor = tool->getWorkspaceScaleFactor();
+
+			// stiffness property
+			double maxStiffness = hapticDeviceInfo.m_maxLinearStiffness / workspaceScaleFactor;
+
+			// define a default stiffness for the object
+			box->m_material->setStiffness(0.5 * maxStiffness);//);
+
+			// define some static friction
+			box->m_material->setStaticFriction(0.5);
+
+			// define some dynamic friction
+			box->m_material->setDynamicFriction(0.5);
+			
+			// set the position of the object at the center of the world
+			convertXYZToCHAI3D(objectPos);
+			box->setLocalPos(objectPos[0], objectPos[1], objectPos[2]);
+
+			// rotate object. don't mind the weird order of rotations. that is because it is converting from unity's coordinate system to chai3d's
+			box->rotateExtrinsicEulerAnglesDeg(objectRotation[2], -1 * objectRotation[0], -1 * objectRotation[1], C_EULER_ORDER_XYZ);
+
+			// render triangles haptically
+			//box->m_material->setHapticTriangleSides(true, false);
+			//
+			//// disable culling
+			//box->setUseCulling(false, true);
+			//
+
+			box->createEffectSurface();
+
+			//// compute a boundary box
+			box->computeBoundaryBox(true);
+
+			world->addChild(box);
+
+			//box->m_material->setViscosity(0.5);
+			//box->createEffectViscosity();
+
+			// return an ID number
+			int objectID = (world->getNumChildren() - 1); // child 0 is the tool itself.
+			std::cout << "box created! ID: " << objectID << std::endl;
 			return objectID;
 		}
 
@@ -410,7 +465,6 @@ namespace NeedleSimPlugin
 
 			// stiffness properties
 			double maxStiffness = hapticDeviceInfo.m_maxLinearStiffness / workspaceScaleFactor;
-
 
 			// stiffness for the object in N/m
 			object->m_material->setStiffness(stiffness * maxStiffness);
@@ -437,6 +491,12 @@ namespace NeedleSimPlugin
 
 		void addMembraneEffect(int objectID, double a_resistance, double a_friction_static, double a_friction_dynamic, double maxForce, double distanceToMaxForce, double a_springMass)
 		{
+			//if (objectID < 0 || objectID >= world->getNumChildren())
+			//{
+			//	std::cout << "membrane effect failed to create: invalid object ID" << std::endl;
+			//	return;
+			//}
+
 			// get object by index in the world scope
 			cGenericObject* object = world->getChild(objectID);
 
@@ -451,6 +511,8 @@ namespace NeedleSimPlugin
 
 			// link it to the object
 			object->addEffect(effect);
+
+			std::cout << "membrane effect added!" << std::endl;
 		}
 
 		void translateObjects(double translation[])
@@ -539,9 +601,9 @@ namespace NeedleSimPlugin
 		// Needle
 		///////////////////////////////////////////
 
-		inline cVector3d Needle::computeAxialConstraintForce(cVector3d & targetPos, cVector3d & targetDir, double & minDist, double & maxDist, double & maxForce)
+		inline cVector3d Needle::computeAxialConstraintForce(cVector3d position, cVector3d & targetPos, cVector3d & targetDir, double & minDist, double & maxDist, double & maxForce)
 		{
-			cVector3d position = m_hapticPoint->m_algorithmFingerProxy->getProxyGlobalPosition();
+			//cVector3d position = m_hapticPoint->m_algorithmFingerProxy->getProxyGlobalPosition();
 
 			cVector3d displacementToTarget = targetPos - position;
 
@@ -567,18 +629,17 @@ namespace NeedleSimPlugin
 				m_deviceGlobalAngVel);
 			cVector3d globalTorque(0.0, 0.0, 0.0);
 
+			cVector3d devicePos = m_hapticPoint->m_algorithmFingerProxy->getDeviceGlobalPosition();
 
 			// apply custom spring effect
 			if (springProperties.enabled)
 			{
-				auto pos = m_hapticPoint->m_algorithmFingerProxy->getDeviceGlobalPosition();
-
-				interactionForce += computeSpringForce(pos, springProperties.restPosition, springProperties.minDist, springProperties.maxDist, springProperties.maxForce);
+				interactionForce += computeSpringForce(devicePos, springProperties.restPosition, springProperties.minDist, springProperties.maxDist, springProperties.maxForce);
 			}
 
 			if (axialConstraint.enabled)
 			{
-				cVector3d axialConstraintForce = computeAxialConstraintForce(axialConstraint.position, axialConstraint.direction, axialConstraint.minDist, axialConstraint.maxDist, axialConstraint.maxForce);
+				cVector3d axialConstraintForce = computeAxialConstraintForce(devicePos, axialConstraint.position, axialConstraint.direction, axialConstraint.minDist, axialConstraint.maxDist, axialConstraint.maxForce);
 				
 
 				// todo:

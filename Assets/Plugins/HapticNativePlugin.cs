@@ -1,4 +1,8 @@
-﻿using System;
+﻿// imports the C++ DLL code, wraps it up for use in Unity.
+// starts with capital --> Unity
+// starts with lowercase --> Plugin
+
+using System;
 using System.Runtime.InteropServices;
 using System.Text;
 using UnityEngine;
@@ -51,8 +55,6 @@ public class HapticNativePlugin
     protected static extern int addObject(double[] objectPos, double[] objectScale, double[] objectRotation,
         double[,] vertPos, double[,] normals, int vertNum, int[,] tris, int triNum);
 
-    //private static uint objectCount = 0;
-
     public static int AddObject(Vector3 position, Vector3 scale, Vector3 rotation, Vector3[] vertPos, Vector3[] normals,
         int vertNum, int[,] tris, int triNum)
     {
@@ -89,6 +91,28 @@ public class HapticNativePlugin
         
 
         return addObject(objectPosition, objectScale, objectRotation, objectVertPos, objectNormals, vertNum, tris, triNum); ;
+    }
+
+    [DllImport("UnityPlugin")]
+    protected static extern int addBoxObject(double[] objectPos, double[] objectScale, double[] objectRotation);
+    public static int AddBoxObject(Vector3 position, Vector3 scale, Vector3 rotation)
+    {
+        double[] objectPosition = new double[3];
+        objectPosition[0] = (double)position.x;
+        objectPosition[1] = (double)position.y;
+        objectPosition[2] = (double)position.z;
+
+        double[] objectScale = new double[3];
+        objectScale[0] = (double)scale.x;
+        objectScale[1] = (double)scale.y;
+        objectScale[2] = (double)scale.z;
+
+        double[] objectRotation = new double[3];
+        objectRotation[0] = (double)rotation.x;
+        objectRotation[1] = (double)rotation.y;
+        objectRotation[2] = (double)rotation.z;
+
+        return addBoxObject(objectPosition, objectScale, objectRotation);
     }
 
     [DllImport("UnityPlugin")]

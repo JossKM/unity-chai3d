@@ -43,3 +43,8 @@ chai3d-.....
 *.db
 Assets/Meshs/Materials
 Assets/Male/Materials
+*.sdf
+*.idb
+*.opensdf
+*.ipdb
+*.iobj

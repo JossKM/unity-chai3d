@@ -13,13 +13,19 @@ public class HapticAxialConstraint : MonoBehaviour
 
     private Transform origin;
 
+    public Transform constraintSlave;
+
+    private Quaternion originalSlaveOrientation;
+
     void Awake()
     {
         origin = GameObject.Find("Haptic Origin").transform;
     }
 
-	void Start () {
-    }
+	void Start ()
+	{
+	    originalSlaveOrientation = constraintSlave.rotation;
+	}
 	
 	void Update ()
 	{
@@ -30,7 +36,8 @@ public class HapticAxialConstraint : MonoBehaviour
 	    }
 
 	    HapticNativePlugin.SetAxialConstraint(enabled, transform.position - origin.position, transform.forward, minDist, maxDist, maxForce);
-    }
+	    constraintSlave.rotation = originalSlaveOrientation * transform.rotation;
+	}
 }
 
 
