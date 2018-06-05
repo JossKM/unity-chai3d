@@ -508,7 +508,7 @@ cVector3d cHapticPoint::computeInteractionForces(cVector3d& a_globalPos,
                 }
 
                 // we compute an angle that compares the velocity of the tool with the reaction force. This friction maximizes
-                // returns a value between o.0 and 1.0 which maximize tangential forces, versus normal forces. The higher
+                // returns a value between 0.0 and 1.0 which maximize tangential forces, versus normal forces. The higher
                 // the tangential force, the higher the sound level. This is slightly hacky but could be improved by 
                 // taking the exact tangential component of the force.
                 double angleFactor = 0.0;
@@ -523,7 +523,7 @@ cVector3d cHapticPoint::computeInteractionForces(cVector3d& a_globalPos,
             }
 
             ///////////////////////////////////////////////////////////////////
-            // IMAPCT SOUND
+            // IMPACT SOUND
             ///////////////////////////////////////////////////////////////////
             m_audioSourceImpact[i]->setSourcePos(a_globalPos);
 
