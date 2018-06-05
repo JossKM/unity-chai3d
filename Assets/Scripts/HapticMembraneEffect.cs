@@ -12,7 +12,7 @@ public class HapticMembraneEffect : MonoBehaviour
     public double friction_dynamic = 0.5;
     public double maxForce = 9.0;
     public double springMass = 1.0;
-    public double distanceToMaxForce = 0.01;
+    public double distanceToMaxForce = 0.02;
 
 
     // Use this for initialization

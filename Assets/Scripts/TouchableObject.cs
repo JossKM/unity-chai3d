@@ -5,9 +5,9 @@ public class TouchableObject : MonoBehaviour {
 
     public int objectId = -1;
 
-    public double friction_static = 0.3;
-    public double friction_dynamic = 0.5;
-    public double stiffness = 0.5;
+    public double friction_static = 0.8;
+    public double friction_dynamic = 0.6;
+    public double stiffness = 0.7;
     public double viscosity = 0.0;
 
     // Use this for initialization
@@ -46,8 +46,6 @@ public class TouchableObject : MonoBehaviour {
             mesh.vertices.Length,
             triangles,
             mesh.triangles.Length / 3);
-
-        HapticNativePlugin.addViscosityEffect(objectId, viscosity);
     }
 
     void Update()

@@ -7,12 +7,18 @@ using System.IO;
 public class ArduinoInterface : MonoBehaviour
 {
     private SerialPort stream;
-    public string portName;
+    public string portName = "COM5";
 
     public static byte msg_CW = 255;
     public static byte msg_CCW = 1;
 
-    public string lastMessage;
+    public string lastMessage = "";
+
+    public float minPos = 0.0f;
+    public float maxPos = 6.0f;
+
+    public string plungerMessageString = "sensor = ";
+    public Transform syringePlunger;
 
     void Start()
     {
@@ -21,6 +27,8 @@ public class ArduinoInterface : MonoBehaviour
         try
         {
             stream.Open();
+
+            Debug.Log("Arduino connected on port: " + portName);
         }
         catch (IOException e)
         {
@@ -47,6 +55,24 @@ public class ArduinoInterface : MonoBehaviour
                 Debug.Log("wrote: " + msg_CCW);
             }
             lastMessage = ReadArduino();
+
+            if (lastMessage != null)
+            {
+                if (lastMessage.StartsWith(plungerMessageString))
+                {
+                    string valueStr = lastMessage.Remove(0, plungerMessageString.Length);
+                    int value = int.Parse(valueStr);
+
+                    //Debug.Log(value);
+
+                    Vector3 plungerPos = syringePlunger.localPosition;
+
+                    float plungerDepth = Mathf.Lerp(minPos, maxPos, Mathf.InverseLerp(0, 1023, value));
+                    plungerPos.y = plungerDepth;
+
+                    syringePlunger.localPosition = plungerPos;
+                }
+            }
         }
     }
 
@@ -66,10 +92,18 @@ public class ArduinoInterface : MonoBehaviour
     {
         try
         {
-            var message = stream.ReadLine();
-            //Debug.Log("message received from Arduino: " + message);
-        
-        return message;
+            string message;
+
+            int numMessagesToReadPerFrame = 2;
+            int i = 0;
+
+            do
+            {
+                message = stream.ReadLine();
+                i++;
+            } while (i < numMessagesToReadPerFrame); // also leaves the loop when timeout occurs
+
+            return message;
         }
         catch (TimeoutException e)
         {

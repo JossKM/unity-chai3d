@@ -24,7 +24,12 @@ ExportedObj/
 
 
 # Unity3D generated meta files
-*.pidb.meta
+*.pidb
+*.meta
+*.log
+*.tlog
+*.pdb
+
 
 # Unity3D Generated File On Crash Reports
 sysinfo.txt
@@ -34,5 +39,7 @@ sysinfo.txt
 *.unitypackage
 *.opendb
 
-/chai3d-3.1.1
+chai3d-.....
 *.db
+Assets/Meshs/Materials
+Assets/Male/Materials
