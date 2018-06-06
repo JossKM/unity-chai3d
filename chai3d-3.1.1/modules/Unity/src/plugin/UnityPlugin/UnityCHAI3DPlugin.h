@@ -6,8 +6,6 @@
 
 namespace NeedleSimPlugin
 {
-
-
 	extern "C"
 	{
 

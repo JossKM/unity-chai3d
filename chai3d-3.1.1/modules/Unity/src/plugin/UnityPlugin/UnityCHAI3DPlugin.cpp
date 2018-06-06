@@ -79,12 +79,6 @@ namespace NeedleSimPlugin
 			// HAPTIC DEVICES / TOOLS
 			//--------------------------------------------------------------------------
 
-			if (handler != nullptr)
-			{
-				delete handler;
-				handler = nullptr;
-			}
-
 			// create a haptic device handler
 			handler = new cHapticDeviceHandler();
 
@@ -236,7 +230,7 @@ namespace NeedleSimPlugin
 					bool isEngaged = tool->isForceEngaged();
 					if (isEngaged != lastForceEngagedState)
 					{
-						std::cout << "Force feedback engaged?: " << isEngaged << std::endl;
+						std::cout << "Force feedback engaged?: " << to_string(isEngaged) << std::endl;
 					}
 					lastForceEngagedState = isEngaged;
 				}
@@ -375,8 +369,6 @@ namespace NeedleSimPlugin
 
 			int objectID = (world->getNumChildren() - 1);
 
-
-			std::cout << "mesh object created! ID: " << objectID << std::endl;
 			return objectID;
 		}
 
@@ -409,22 +401,12 @@ namespace NeedleSimPlugin
 			// rotate object. don't mind the weird order of rotations. that is because it is converting from unity's coordinate system to chai3d's
 			box->rotateExtrinsicEulerAnglesDeg(objectRotation[2], -1 * objectRotation[0], -1 * objectRotation[1], C_EULER_ORDER_XYZ);
 
-			// render triangles haptically
-			//box->m_material->setHapticTriangleSides(true, false);
-			//
-			//// disable culling
-			//box->setUseCulling(false, true);
-			//
-
 			box->createEffectSurface();
 
 			//// compute a boundary box
 			box->computeBoundaryBox(true);
 
 			world->addChild(box);
-
-			//box->m_material->setViscosity(0.5);
-			//box->createEffectViscosity();
 
 			// return an ID number
 			int objectID = (world->getNumChildren() - 1); // child 0 is the tool itself.
@@ -468,12 +450,6 @@ namespace NeedleSimPlugin
 
 		void addMembraneEffect(int objectID, double a_resistance, double a_friction_static, double a_friction_dynamic, double maxForce, double distanceToMaxForce, double a_springMass, double a_penetrationThreshold)
 		{
-			//if (objectID < 0 || objectID >= world->getNumChildren())
-			//{
-			//	std::cout << "membrane effect failed to create: invalid object ID" << std::endl;
-			//	return;
-			//}
-
 			// get object by index in the world scope
 			cGenericObject* object = world->getChild(objectID);
 
@@ -489,8 +465,6 @@ namespace NeedleSimPlugin
 
 			// link it to the object
 			object->addEffect(effect);
-
-			std::cout << "membrane effect added!" << std::endl;
 		}
 
 		void translateObjects(double translation[])
@@ -718,7 +692,7 @@ namespace NeedleSimPlugin
 			if (forceMag >= m_penetrationThreshold && !m_membranePenetrated)
 			{
 				m_membranePenetrated = true;
-				std::cout << "membrane penetrated!" << std::endl;
+				PRINTLN("membrane penetrated!")
 			}
 
 			//if penetrated, allow the spring to move.
@@ -745,7 +719,7 @@ namespace NeedleSimPlugin
 					if (netForceMag <= 0.00001)
 					{
 						m_useDynamicFriction = false;
-						std::cout << "back to static friction!" << std::endl;
+						PRINTLN("back to static friction!")
 					}
 
 					// the spring tail moves toward the tool
