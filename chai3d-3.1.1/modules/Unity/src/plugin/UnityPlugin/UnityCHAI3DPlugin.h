@@ -7,6 +7,7 @@
 namespace NeedleSimPlugin
 {
 
+
 	extern "C"
 	{
 
@@ -25,6 +26,7 @@ namespace NeedleSimPlugin
 		{
 		public:
 			Needle(cWorld* a_parentWorld);
+			~Needle();
 
 			Spring springProperties;
 

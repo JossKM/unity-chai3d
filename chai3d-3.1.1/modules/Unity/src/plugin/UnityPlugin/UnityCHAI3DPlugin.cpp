@@ -16,6 +16,10 @@ using namespace std;
 
 #define HAPTIC_DEBUG
 
+#ifdef HAPTIC_DEBUG
+#define PRINTLN(x) std::cout << x << std::endl;
+#define PRINTWAIT(x, time) std::cout << x << std::endl; Sleep(time);
+#endif
 
 namespace NeedleSimPlugin
 {
@@ -33,7 +37,7 @@ namespace NeedleSimPlugin
 		cHapticDeviceHandler* handler;
 
 		// a pointer to the current haptic device
-		cGenericHapticDevicePtr hapticDevice;
+		cGenericHapticDevicePtr* hapticDevice;
 
 		// a virtual tool representing the haptic device in the scene
 		Needle* tool;
@@ -63,23 +67,12 @@ namespace NeedleSimPlugin
 			FILE* pConsole;
 			AllocConsole();
 			freopen_s(&pConsole, "CONOUT$", "wb", stdout);
-
-			time_t currentTime;
-			time(&currentTime);
-
-			std::cout << "Joss wuz here. Time: " << currentTime << std::endl;
 #endif
 
 			//--------------------------------------------------------------------------
 			// WORLD
 			//--------------------------------------------------------------------------
 
-			// create a new world.
-			if (world != nullptr)
-			{
-				delete world;
-				handler = nullptr;
-			}
 			world = new cWorld();
 
 			//--------------------------------------------------------------------------
@@ -91,34 +84,29 @@ namespace NeedleSimPlugin
 				delete handler;
 				handler = nullptr;
 			}
+
 			// create a haptic device handler
 			handler = new cHapticDeviceHandler();
 
-			// get access to the first available haptic device
-			if (!handler->getDevice(hapticDevice, 0))
-				return false;
+			// instantiate the shared pointer to the device. The reason it is created and deleted is because it does not leave scope when you stop the play session in Unity.
+			hapticDevice = new cGenericHapticDevicePtr();
 
+			// get access to the first available haptic device
+			if (!handler->getDevice(*hapticDevice, 0))
+				return false;
+			
 			// retrieve information about the current haptic device
-			hapticDeviceInfo = hapticDevice->getSpecifications();
+			hapticDeviceInfo = (*hapticDevice)->getSpecifications();
 
 			// create a 3D tool and add it to the world
-#ifdef HAPTIC_DEBUG
-			if (tool != nullptr)
-			{
-				std::cout << "tool recreated? uh-oh." << std::endl;
-				//delete tool;
-			}
-#endif
-
 			tool = new Needle(world);
 			world->addChild(tool);
 
 			// connect the haptic device to the tool
-			tool->setHapticDevice(hapticDevice);
+			tool->setHapticDevice(*hapticDevice);
 
 			// define the radius of the tool (sphere)
-			//toolRadius = 0.025;
-			toolRadius = 0.001;
+			toolRadius = 0.005;
 
 			// define a radius for the tool
 			tool->setRadius(toolRadius);
@@ -142,30 +130,12 @@ namespace NeedleSimPlugin
 #ifdef HAPTIC_DEBUG
 			lastForceEngagedState = tool->isForceEngaged();
 
-			//print a list of all connected devices
-			{
-				std::cout << "list of connected devices:" << std::endl;
-				cGenericHapticDevicePtr someDevice; // to be passed by reference
-				for (auto i = 0u; i < handler->getNumDevices(); i++)
-				{
-					handler->getDevice(someDevice, i);
-					cHapticDeviceInfo info = someDevice->getSpecifications();
-					std::cout << "index " << i << ": model name: " << info.m_modelName << std::endl;
-				}
-
-
-			} // list all devices
-
-
 			std::cout << "===[ world initialized ]===" << std::endl;
 			std::cout << "model id: " << hapticDeviceInfo.m_model << std::endl;
 			std::cout << "model name: " << hapticDeviceInfo.m_modelName << std::endl;
 			std::cout << "manufacturer: " << hapticDeviceInfo.m_manufacturerName << std::endl;
-			std::cout << "device ptr:" << hapticDevice << std::endl;
-			std::cout << "number of world objects: " << world->getNumChildren() << std::endl;
+			std::cout << "===============================\n" << std::endl;
 #endif
-
-
 			return true;
 		}
 
@@ -189,18 +159,25 @@ namespace NeedleSimPlugin
 			while (!simulationFinished) { cSleepMs(100); }
 
 			// close haptic device
+			(*hapticDevice)->close();
 			tool->stop();
 
-			//delete tool;
+
+			//--------------------------------------------------------------------------
+			// Memory cleanup
+			//--------------------------------------------------------------------------
+
 			delete handler;
 			handler = nullptr;
+
+			// clean up world. This will also delete the tool, because the tool is a child of the world
 			world->deleteAllChildren();
-			//delete world;
+			delete world;
+			world = nullptr;
+			tool = nullptr;
 
-			//delete handler;
-			//delete world;
-			//delete tool;
-
+			// clean up device shared pointer
+			delete hapticDevice;
 
 #ifdef HAPTIC_DEBUG
 			FreeConsole();
@@ -660,6 +637,10 @@ namespace NeedleSimPlugin
 		}
 
 		Needle::Needle(cWorld * a_parentWorld) : cToolCursor(a_parentWorld)
+		{
+		}
+
+		Needle::~Needle()
 		{
 		}
 
