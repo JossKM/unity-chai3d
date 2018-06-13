@@ -585,7 +585,7 @@ namespace NeedleSimPlugin
 			cVector3d interactionForce(0.0, 0.0, 0.0);
 			cVector3d globalTorque(0.0, 0.0, 0.0);
 
-			int numContactPoint = (int)(m_hapticPoints.size());
+			//int numContactPoint = (int)(m_hapticPoints.size());
 			//for (int i = 0; i< numContactPoint; i++)
 			//{
 			//	// get next haptic point
