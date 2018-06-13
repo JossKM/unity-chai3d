@@ -1073,10 +1073,6 @@ void cAlgorithmFingerProxy::testFrictionAndMoveProxy(const cVector3d& a_goal,
 //==============================================================================
 void cAlgorithmFingerProxy::updateForce()
 {
-    // initialize variables
-    double stiffness;
-    cVector3d averagedSurfaceNormal;
-
     //---------------------------------------------------------------------
     // CHECK FOR CONTACTS
     //---------------------------------------------------------------------
@@ -1090,20 +1086,29 @@ void cAlgorithmFingerProxy::updateForce()
         return;
     }
 
-
     //---------------------------------------------------------------------
     // STIFFNESS AND SURFACE NORMAL ESTIMATION 
     //---------------------------------------------------------------------
 
     // initialize surface normal and stiffness values
-    averagedSurfaceNormal.zero();
-    stiffness = 0.0;
+
+	double avgStiffness = 0.0;
+	double avgPenetrationThreshold = 0.0;
+	double avgThickness = 0.0;
+	cVector3d averagedSurfaceNormal(0.0, 0.0, 0.0);
+
 
     // compute the average surface normal and stiffness
-    for (unsigned int i=0; i<m_numCollisionEvents; i++)
+    for (unsigned int i = 0; i < m_numCollisionEvents; i++)
     {
+		cMaterialPtr material = m_collisionEvents[i]->m_object->m_material;
+
         // compute stiffness
-        stiffness += ( m_collisionEvents[i]->m_object->m_material->getStiffness() );
+        avgStiffness += (material->getStiffness() );
+
+		// compute penetration characteristics
+		avgPenetrationThreshold += (material->getPenetrationForceThreshold());
+		avgThickness += material->getSurfaceThickness();
 
         // compute surface normal
         averagedSurfaceNormal.add(m_collisionEvents[i]->m_globalNormal);
@@ -1112,8 +1117,13 @@ void cAlgorithmFingerProxy::updateForce()
     if (m_numCollisionEvents > 0)
     {
         double scale = 1.0/(double)m_numCollisionEvents;
-        stiffness *= scale;
-        averagedSurfaceNormal.mul(scale);
+        
+		avgStiffness *= scale;
+		
+		avgPenetrationThreshold *= scale;
+		avgThickness *= scale;
+        
+		averagedSurfaceNormal.mul(scale);
     }
 
 
@@ -1124,7 +1134,7 @@ void cAlgorithmFingerProxy::updateForce()
     // compute the force by modeling a spring between the proxy and the device
     cVector3d force;
     m_proxyGlobalPos.subr(m_deviceGlobalPos, force);
-    force.mul(stiffness);
+    force.mul(avgStiffness);
 
     if (force.lengthsq() == 0)
     {
@@ -1332,6 +1342,13 @@ void cAlgorithmFingerProxy::updateForce()
     // compute tangential and normal forces for current triangle
     m_normalForce = cProject(force, averagedSurfaceNormal);
     force.subr(m_normalForce, m_tangentialForce);
+
+
+	// if past the penetration threshold, place the proxy
+	if (m_normalForce.lengthsq() > avgPenetrationThreshold * avgPenetrationThreshold)
+	{
+		m_proxyGlobalPos = m_nextBestProxyGlobalPos + (-averagedSurfaceNormal * avgThickness);
+	}
 
     // return computed force
     m_lastGlobalForce = force;

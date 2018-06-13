@@ -74,6 +74,9 @@ cMaterial::cMaterial()
     m_vibrationAmplitude    = 0.0;
     m_stickSlipForceMax     = 0.0;
     m_stickSlipStiffness    = 0.0;
+	m_surfaceThickness		= 0.0001;
+	m_penetrationForceThreshold = std::numeric_limits<double>::max();
+
 
     m_useHapticFriction             = false;
     m_useHapticTexture              = false;
@@ -496,6 +499,20 @@ void cMaterial::setStickSlipStiffness(const double a_stickSlipStiffness)
     m_flag_stickSlipStiffness = true;
 }
 
+	void cMaterial::setPenetrationForceThreshold(const double a_force)
+	{
+		// update value
+		m_penetrationForceThreshold = cClamp0(m_penetrationForceThreshold);
+
+		// mark variable as modified
+		m_flag_penetrationForceThreshold = true;
+	}
+
+	void cMaterial::setSurfaceThickness(const double a_thickness)
+	{
+		m_surfaceThickness = a_thickness;
+	}
+
 
 //==============================================================================
 /*!
@@ -758,6 +775,8 @@ void cMaterial::setModificationFlags(const bool a_value)
     m_flag_magnetMaxDistance            = a_value;
     m_flag_stickSlipForceMax            = a_value;
     m_flag_stickSlipStiffness           = a_value;
+	m_flag_penetrationForceThreshold	= a_value;
+	m_flag_surfaceThickness				= a_value;
     m_flag_useHapticTexture             = a_value;
     m_flag_useHapticShading             = a_value;
     m_flag_hapticFrontSideOfTriangles   = a_value;
@@ -813,6 +832,10 @@ void cMaterial::copyTo(cMaterialPtr a_material)
         a_material->setStickSlipForceMax(m_stickSlipForceMax);
     if (m_flag_stickSlipStiffness)  
         a_material->setStickSlipStiffness(m_stickSlipStiffness);
+	if (m_flag_penetrationForceThreshold)
+		a_material->setPenetrationForceThreshold(m_penetrationForceThreshold);
+	if (m_flag_surfaceThickness)
+		a_material->setSurfaceThickness(m_surfaceThickness);
     if (m_flag_hapticFrontSideOfTriangles)
         a_material->setHapticTriangleFrontSide(m_hapticFrontSideOfTriangles);
     if (m_flag_hapticBackSideOfTriangles)

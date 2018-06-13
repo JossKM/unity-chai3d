@@ -286,6 +286,21 @@ public:
     //! This method sets the stiffness of the stick and slip model [N/m]
     inline double getStickSlipStiffness() const { return (m_stickSlipStiffness); }
 
+	////////////////////////////////////////////////////////////////////////////
+	// SURFACE PENETRATION
+	////////////////////////////////////////////////////////////////////////////
+
+	//! This method sets the minimum force required to pop through the surface of the material.
+	void setPenetrationForceThreshold(const double a_force);
+
+	//! Set the thickness of the surface. This determines how far from the contact point the haptic point will appear after surface penetration.
+	void setSurfaceThickness(const double a_thickness);
+
+	//! get the thickness of the surface. This determines how far from the contact point the haptic point will appear after surface penetration.
+	inline double  getSurfaceThickness() const { return (m_surfaceThickness); }
+
+	//! This method returns the minimum force required to pop through the surface of the material.
+	inline double getPenetrationForceThreshold() const { return (m_penetrationForceThreshold); }
 
     //--------------------------------------------------------------------------
     // PUBLIC METHODS - HAPTIC PROPERTIES (MESH OBJECTS ONLY)
@@ -1071,6 +1086,22 @@ protected:
 
     //! Flag to track if related member has been modified.
     bool m_flag_stickSlipStiffness;
+
+	////////////////////////////////////////////////////////////////////////////
+	// SURFACE PENETRATION
+	////////////////////////////////////////////////////////////////////////////
+
+	//! Force threshold before this material will be penetrated. 
+	double m_penetrationForceThreshold;
+
+	//! Determines how far from the contact point the haptic point will appear after surface penetration.
+	double m_surfaceThickness;
+
+	//! Flag to track if related member has been modified.
+	bool m_flag_penetrationForceThreshold;
+
+	//! Flag to track if related member has been modified.
+	bool m_flag_surfaceThickness;
 
 
     ////////////////////////////////////////////////////////////////////////////
