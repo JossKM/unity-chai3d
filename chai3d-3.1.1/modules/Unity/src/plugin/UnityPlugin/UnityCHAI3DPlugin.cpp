@@ -586,31 +586,29 @@ namespace NeedleSimPlugin
 			cVector3d globalTorque(0.0, 0.0, 0.0);
 
 			int numContactPoint = (int)(m_hapticPoints.size());
-			for (int i = 0; i< numContactPoint; i++)
-			{
-				// get next haptic point
-				cHapticPoint* nextContactPoint = m_hapticPoints[i];
-
-				// compute force at haptic point as well as new proxy position
-				cVector3d t_force = nextContactPoint->computeInteractionForces(m_deviceGlobalPos,
-					m_deviceGlobalRot,
-					m_deviceGlobalLinVel,
-					m_deviceGlobalAngVel);
-
-				cVector3d t_pos = nextContactPoint->getGlobalPosProxy();
-
-				// combine force contributions together
-				interactionForce.add(t_force);
-			}
-
-
+			//for (int i = 0; i< numContactPoint; i++)
+			//{
+			//	// get next haptic point
+			//	cHapticPoint* nextContactPoint = m_hapticPoints[i];
 			//
+			//	// compute force at haptic point as well as new proxy position
+			//	cVector3d t_force = nextContactPoint->computeInteractionForces(m_deviceGlobalPos,
+			//		m_deviceGlobalRot,
+			//		m_deviceGlobalLinVel,
+			//		m_deviceGlobalAngVel);
 			//
-			//// compute interaction forces at haptic point in global coordinates
-			//cVector3d interactionForce = m_hapticPoint->computeInteractionForces(m_deviceGlobalPos,
-			//	m_deviceGlobalRot,
-			//	m_deviceGlobalLinVel,
-			//	m_deviceGlobalAngVel);
+			//	cVector3d t_pos = nextContactPoint->getGlobalPosProxy();
+			//
+			//	// combine force contributions together
+			//	interactionForce.add(t_force);
+			//}
+
+
+			// compute interaction forces at haptic point in global coordinates
+			interactionForce = m_hapticTip->computeInteractionForces(m_deviceGlobalPos,
+				m_deviceGlobalRot,
+				m_deviceGlobalLinVel,
+				m_deviceGlobalAngVel);
 
 			cVector3d devicePos = m_hapticTip->m_algorithmFingerProxy->getDeviceGlobalPosition();
 
