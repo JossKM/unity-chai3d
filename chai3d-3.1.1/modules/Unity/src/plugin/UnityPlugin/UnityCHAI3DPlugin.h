@@ -20,11 +20,14 @@ namespace NeedleSimPlugin
 		};
 
 		//Custom simulation tool
-		class Needle : public cToolCursor
+		class Needle : public cGenericTool
 		{
+
 		public:
 			Needle(cWorld* a_parentWorld);
 			~Needle();
+
+			cHapticPoint* m_hapticTip; // tip of the needle
 
 			Spring springProperties;
 
@@ -42,15 +45,25 @@ namespace NeedleSimPlugin
 				double maxForce;
 
 			} axialConstraint;
+			
+			bool isForceEngaged();
 
 			inline cVector3d computeAxialConstraintForce(cVector3d position, cVector3d& targetPos, cVector3d& targetDir, double& minDist, double& maxDist, double& maxForce);
 
 
 			void computeInteractionForces() override;
 
-			bool isForceEngaged();
+			// compute all forces parallel to the needle hull
+			//void computeOnAxisForces();
+
+			// compute all forces perpendicular to the needle hull
+			//void computeOffAxisForces();
+
 			
 		private:
+			//cVector3d onAxisForce;
+			//cVector3d offAxisForce;
+
 			bool m_isPenetrating = false;
 		};
 
@@ -121,12 +134,10 @@ namespace NeedleSimPlugin
 		// set orientation of workspace
 		FUNCDLL_API void setHapticRotation(double rotation[]);
 
-		// set constraint to only allow movement along a specific axis given by a direction vector. passing 0,0,0 will disable the constraint
-		//FUNCDLL_API void setAxialConstraint(double direction[]);
-
 		FUNCDLL_API void setGlobalForce(double force[]);
-
 		FUNCDLL_API void setSpringProperties(bool enabled, double position[], double minDist, double maxDist, double maxForce);
+		
+		// set constraint to only allow movement along a specific axis given by a direction vector. passing 0,0,0 will disable the constraint
 		FUNCDLL_API void setAxialConstraint(bool enabled, double position[], double direction[], double minDist, double maxDist, double maxForce);
 
 		// Like Unity, Chai3D uses a right handed coordinate system, but -z x y

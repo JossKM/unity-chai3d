@@ -14,11 +14,15 @@ using namespace std;
 #include "UnityCHAI3DPlugin.h"
 //------------------------------------------------------------------------------
 
+// quality-of-life debugging preprocessor macros, because i'm lazy - joss
 #define HAPTIC_DEBUG
 
 #ifdef HAPTIC_DEBUG
 #define PRINTLN(x) std::cout << x << std::endl;
 #define PRINTWAIT(x, time) std::cout << x << std::endl; Sleep(time);
+#else
+#define PRINTLN(x) ; 
+#define PRINTWAIT(x, time) ;
 #endif
 
 namespace NeedleSimPlugin
@@ -261,9 +265,9 @@ namespace NeedleSimPlugin
 		{
 			if (simulationRunning)
 			{
-				outPosArray[0] = tool->m_hapticPoint->getGlobalPosProxy().x();
-				outPosArray[1] = tool->m_hapticPoint->getGlobalPosProxy().y();
-				outPosArray[2] = tool->m_hapticPoint->getGlobalPosProxy().z();
+				outPosArray[0] = tool->m_hapticTip->getGlobalPosProxy().x();
+				outPosArray[1] = tool->m_hapticTip->getGlobalPosProxy().y();
+				outPosArray[2] = tool->m_hapticTip->getGlobalPosProxy().z();
 				convertXYZFromCHAI3D(outPosArray);
 			}
 			else
@@ -278,9 +282,9 @@ namespace NeedleSimPlugin
 		{
 			if (simulationRunning)
 			{
-				outPosArray[0] = tool->m_hapticPoint->getGlobalPosGoal().x();
-				outPosArray[1] = tool->m_hapticPoint->getGlobalPosGoal().y();
-				outPosArray[2] = tool->m_hapticPoint->getGlobalPosGoal().z();
+				outPosArray[0] = tool->m_hapticTip->getGlobalPosGoal().x();
+				outPosArray[1] = tool->m_hapticTip->getGlobalPosGoal().y();
+				outPosArray[2] = tool->m_hapticTip->getGlobalPosGoal().z();
 				convertXYZFromCHAI3D(outPosArray);
 			}
 			else
@@ -293,7 +297,7 @@ namespace NeedleSimPlugin
 
 		bool isTouching(int objectId)
 		{
-			return tool->m_hapticPoint->isInContact(world->getChild(objectId));
+			return tool->m_hapticTip->isInContact(world->getChild(objectId));
 		}
 
 		bool isButtonPressed(int buttonId)
@@ -362,7 +366,6 @@ namespace NeedleSimPlugin
 
 			// compute collision detection algorithm
 			object->createAABBCollisionDetector(toolRadius);
-
 
 			// add object to world
 			world->addChild(object);
@@ -574,14 +577,42 @@ namespace NeedleSimPlugin
 
 		void Needle::computeInteractionForces()
 		{
-			// compute interaction forces at haptic point in global coordinates
-			cVector3d interactionForce = m_hapticPoint->computeInteractionForces(m_deviceGlobalPos,
-				m_deviceGlobalRot,
-				m_deviceGlobalLinVel,
-				m_deviceGlobalAngVel);
+			// for each haptic point compute the interaction force
+			// and combine their overall contribution to compute the output force
+			// and torque to be sent to the haptic device
+
+			// initialize variables
+			cVector3d interactionForce(0.0, 0.0, 0.0);
 			cVector3d globalTorque(0.0, 0.0, 0.0);
 
-			cVector3d devicePos = m_hapticPoint->m_algorithmFingerProxy->getDeviceGlobalPosition();
+			int numContactPoint = (int)(m_hapticPoints.size());
+			for (int i = 0; i< numContactPoint; i++)
+			{
+				// get next haptic point
+				cHapticPoint* nextContactPoint = m_hapticPoints[i];
+
+				// compute force at haptic point as well as new proxy position
+				cVector3d t_force = nextContactPoint->computeInteractionForces(m_deviceGlobalPos,
+					m_deviceGlobalRot,
+					m_deviceGlobalLinVel,
+					m_deviceGlobalAngVel);
+
+				cVector3d t_pos = nextContactPoint->getGlobalPosProxy();
+
+				// combine force contributions together
+				interactionForce.add(t_force);
+			}
+
+
+			//
+			//
+			//// compute interaction forces at haptic point in global coordinates
+			//cVector3d interactionForce = m_hapticPoint->computeInteractionForces(m_deviceGlobalPos,
+			//	m_deviceGlobalRot,
+			//	m_deviceGlobalLinVel,
+			//	m_deviceGlobalAngVel);
+
+			cVector3d devicePos = m_hapticTip->m_algorithmFingerProxy->getDeviceGlobalPosition();
 
 			// apply custom spring effect
 			if (springProperties.enabled)
@@ -610,12 +641,28 @@ namespace NeedleSimPlugin
 			return m_forceEngaged;
 		}
 
-		Needle::Needle(cWorld * a_parentWorld) : cToolCursor(a_parentWorld)
+		Needle::Needle(cWorld * a_parentWorld) : cGenericTool(a_parentWorld)
 		{
+			int numPoints = 1;
+			for (int i = 0; i < numPoints; i++)
+			{
+				cHapticPoint* newPoint = new cHapticPoint(this); 
+
+				m_hapticPoints.push_back(newPoint);
+			}
+
+			m_hapticTip = m_hapticPoints[0];
 		}
 
 		Needle::~Needle()
 		{
+			for (auto point : m_hapticPoints)
+			{
+				delete point;
+				point = nullptr;
+			}
+
+			m_hapticPoints.clear();
 		}
 
 	} // extern 
@@ -676,12 +723,12 @@ namespace NeedleSimPlugin
 
 				// initialize the spring on the device position. 
 				// the tool is at first pulled back towards its initial entry point
-				spring.restPosition = tool->m_hapticPoint->getLocalPosGoal(); //a_toolPos;
+				spring.restPosition = tool->m_hapticTip->getLocalPosGoal(); //a_toolPos;
 			}
 			
 			//double devicePos[3];
 			//getDevicePosition(devicePos);
-			cVector3d pos = tool->m_hapticPoint->getLocalPosGoal();
+			cVector3d pos = tool->m_hapticTip->getLocalPosGoal();
 
 			// apply force onto the haptic device, pulling the tool toward the spring tail, wherever it may be
 			cVector3d force = computeSpringForce(pos, spring.restPosition, spring.minDist, spring.maxDist, spring.maxForce);

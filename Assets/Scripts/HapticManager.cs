@@ -13,8 +13,11 @@ public class HapticManager : MonoBehaviour
     public static bool isHapticAvail;
    
     private Vector3 originalPosition;
+
+    // for debugging. will scale accorfing to the chai3d haptic world scale
     public GameObject workspaceVisualizer;
 
+    // shows the device or "goal" position. Different from the proxy position reflected in this script's parent gameObject
     public GameObject devicePositionGameObject;
 
     // Use this for initialization
