@@ -305,6 +305,12 @@ namespace NeedleSimPlugin
 			return tool->getUserSwitch(buttonId);
 		}
 
+		void setToolRadius(double a_toolRadius)
+		{
+			toolRadius = a_toolRadius;
+			tool->setRadius(a_toolRadius);
+		}
+
 		int addObject(double objectPos[], double objectScale[], double objectRotation[], double vertPos[][3], double normals[][3], int vertNum, int triPos[][3], int triNum)
 		{
 			// read the scale factor between the physical workspace of the haptic
@@ -791,5 +797,17 @@ namespace NeedleSimPlugin
 	{
 		return m_membranePenetrated;
 	}
+
+	//cPenetrablePoint::cPenetrablePoint(cGenericTool * a_parentTool) : cHapticPoint(a_parentTool)
+	//{
+	//	// replace finger-proxy algorithm used for modelling contacts with 
+	//	// cMesh objects.
+	//	delete m_algorithmFingerProxy;
+	//	m_algorithmFingerProxy = new cAlgorithmFingerProxyPuncture();
+	//}
+	//
+	//cPenetrablePoint::~cPenetrablePoint()
+	//{
+	//}
 
 }

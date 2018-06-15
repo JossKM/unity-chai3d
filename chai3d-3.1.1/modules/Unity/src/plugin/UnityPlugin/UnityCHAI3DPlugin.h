@@ -6,6 +6,15 @@
 
 namespace NeedleSimPlugin
 {
+	//class cPenetrablePoint : public cHapticPoint
+	//{
+	//	cAlgorithmFingerProxyPuncture
+	//
+	//	cPenetrablePoint(cGenericTool* a_parentTool);
+	//	virtual ~cPenetrablePoint();
+	//};
+
+
 	extern "C"
 	{
 
@@ -112,6 +121,8 @@ namespace NeedleSimPlugin
 		// check if the tool is touching a particular object by ID.			object IDs start at 1 because the haptic tool is the first child of the world (index 0)
 		FUNCDLL_API bool isTouching(int objectId);
 		FUNCDLL_API bool isButtonPressed(int buttonId);
+
+		FUNCDLL_API void setToolRadius(double a_toolRadius);
 
 		// No removing objects is allowed, since these IDs work by assuming everything is added sequentially as a child of the world, and never removed.
 		// return a world ID to the added object (literally just its index in the cWorld children vector).
