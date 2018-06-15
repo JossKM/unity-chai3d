@@ -1,4 +1,4 @@
-#include <iostream>
+//#include <iostream>
 //==============================================================================
 /*
     Software License Agreement (BSD License)
@@ -1346,16 +1346,16 @@ void cAlgorithmFingerProxy::updateForce()
 
 
 	// if past the penetration threshold, place the proxy
-	std::cout << "penThresh: " << avgPenetrationThreshold * avgPenetrationThreshold << "| normForce: " << m_normalForce.lengthsq() << "| avgThickness: " << avgThickness << std::endl;
-
-	if (m_normalForce.lengthsq() > 5.0)//avgPenetrationThreshold * avgPenetrationThreshold)
-	{
-		m_nextBestProxyGlobalPos = m_proxyGlobalPos;
-		m_proxyGlobalPos = m_nextBestProxyGlobalPos + (-averagedSurfaceNormal * avgThickness);
-		std::cout << "hello world?\n";
-
-		//force.zero();
-	}
+	//std::cout << "penThresh: " << avgPenetrationThreshold * avgPenetrationThreshold << "| normForce: " << m_normalForce.lengthsq() << "| avgThickness: " << avgThickness << std::endl;
+	//
+	//if (m_normalForce.lengthsq() > 5.0)//avgPenetrationThreshold * avgPenetrationThreshold)
+	//{
+	//	m_nextBestProxyGlobalPos = m_proxyGlobalPos;
+	//	m_proxyGlobalPos = m_nextBestProxyGlobalPos + (-averagedSurfaceNormal * avgThickness);
+	//	std::cout << "hello world?\n";
+	//
+	//	//force.zero();
+	//}
 
     // return computed force
     m_lastGlobalForce = force;
