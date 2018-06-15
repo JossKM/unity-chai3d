@@ -10,6 +10,7 @@ public abstract class HapticObject : MonoBehaviour
     public double friction_dynamic = 0.6;
     public double stiffness = 0.7;
     public double viscosity = 0.0;
+    public double penetrationForce = 10000.0;
 }
 
 public class TouchableMeshObject : HapticObject
@@ -53,6 +54,6 @@ public class TouchableMeshObject : HapticObject
 
     void Update()
     {
-        HapticNativePlugin.setObjectProperties(objectId, stiffness, friction_static, friction_dynamic, viscosity);
+        HapticNativePlugin.setObjectProperties(objectId, stiffness, friction_static, friction_dynamic, viscosity, penetrationForce);
     }
 }

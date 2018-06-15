@@ -75,7 +75,7 @@ cMaterial::cMaterial()
     m_stickSlipForceMax     = 0.0;
     m_stickSlipStiffness    = 0.0;
 	m_surfaceThickness		= 0.0001;
-	m_penetrationForceThreshold = std::numeric_limits<double>::max();
+	m_penetrationForceThreshold = 99999.0;//std::numeric_limits<double>::max();
 
 
     m_useHapticFriction             = false;

@@ -40,9 +40,6 @@ namespace NeedleSimPlugin
 
 			Spring springProperties;
 
-			//double axialConstraintPriority = 50.0;
-			//double interactionForcePriority = 50.0;
-
 			// to constrain movement to a specific axis at a specific location in worldspace
 			struct AxialConstraint
 			{
@@ -131,7 +128,7 @@ namespace NeedleSimPlugin
 
 		FUNCDLL_API int addBoxObject(double objectPos[], double objectScale[], double objectRotation[]);
 
-		FUNCDLL_API void setObjectProperties(int objectID, double stiffness, double friction_static, double friction_dynamic, double viscosity);
+		FUNCDLL_API void setObjectProperties(int objectID, double stiffness, double friction_static, double friction_dynamic, double viscosity, double penetrationForce);
 
 		FUNCDLL_API void addViscosityEffect(int objectID, double viscosity);
 		FUNCDLL_API void addMembraneEffect(int objectID, double a_resistance, double a_friction_static, double a_friction_dynamic, double maxForce, double distanceToMaxForce, double a_springMass, double a_penetrationThreshold);

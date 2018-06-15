@@ -8,6 +8,7 @@ using System.Threading;
 public class HapticManager : MonoBehaviour
 {
     public double worldScale = 1.0d;
+    public double toolRadius = 0.005d;
 
     public bool useHaptic;
     public static bool isHapticAvail;
@@ -38,7 +39,13 @@ public class HapticManager : MonoBehaviour
     private void Start()
     {
         if(isHapticAvail)
+        {
             HapticNativePlugin.startHaptics();
+        }
+        else
+        {
+            Debug.Log("ERROR: No Haptic Device found!");
+        }
     }
 
     private void OnDestroy()
@@ -50,10 +57,17 @@ public class HapticManager : MonoBehaviour
     private void Update()
     {
         if (isHapticAvail)
+        {
             this.transform.localPosition = HapticNativePlugin.GetProxyPosition();
+            
+            HapticNativePlugin.setToolRadius(toolRadius);
 
-        if(devicePositionGameObject!= null)
-             devicePositionGameObject.transform.localPosition = HapticNativePlugin.GetDevicePosition();
+            if (devicePositionGameObject != null)
+            {
+                devicePositionGameObject.transform.localPosition = HapticNativePlugin.GetDevicePosition();
+                devicePositionGameObject.transform.localScale = new Vector3((float)toolRadius, (float)toolRadius, (float)toolRadius) * 2.0f;
+            }
+        }
     }
     
 }

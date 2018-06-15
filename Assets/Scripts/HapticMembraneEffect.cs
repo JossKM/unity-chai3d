@@ -5,8 +5,6 @@ using UnityEngine.Assertions;
 [RequireComponent(typeof(HapticObject))]
 public class HapticMembraneEffect : MonoBehaviour
 {
-    private int objectId;
-
     public double resistance = 9.0;
     public double friction_static = 0.2;
     public double friction_dynamic = 0.5;
@@ -21,8 +19,11 @@ public class HapticMembraneEffect : MonoBehaviour
     {
         //Assert.AreNotEqual(springMass, 0.0);
         //
-        objectId = GetComponent<HapticObject>().objectId;
-        
+
+        var a = GetComponent<TouchableMeshObject>();
+
+        int objectId = GetComponent<TouchableMeshObject>().objectId;
+
         HapticNativePlugin.addViscosityEffect(objectId, GetComponent<HapticObject>().viscosity);
         HapticNativePlugin.addMembraneEffect(objectId, resistance, friction_static, friction_dynamic, maxForce, distanceToMaxForce, springMass, penetrationThreshold);
     }

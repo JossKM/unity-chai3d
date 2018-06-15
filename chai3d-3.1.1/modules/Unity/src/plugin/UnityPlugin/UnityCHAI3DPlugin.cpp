@@ -104,9 +104,9 @@ namespace NeedleSimPlugin
 			tool->setHapticDevice(*hapticDevice);
 
 			// define the radius of the tool (sphere)
-			toolRadius = 0.005;
+			toolRadius = 0.1;
 
-			// define a radius for the tool
+			// define a radius for the tool. Also used for collision bounding box creation
 			tool->setRadius(toolRadius);
 
 			// enable if objects in the scene are going to rotate of translate
@@ -423,7 +423,7 @@ namespace NeedleSimPlugin
 			return objectID;
 		}
 
-		void setObjectProperties(int objectID, double stiffness, double friction_static, double friction_dynamic, double viscosity)
+		void setObjectProperties(int objectID, double stiffness, double friction_static, double friction_dynamic, double viscosity, double penetrationForce)
 		{
 			cGenericObject* object = world->getChild(objectID);
 
@@ -445,7 +445,9 @@ namespace NeedleSimPlugin
 
 			// viscosity (only active if a viscosity effect is also on it)
 			object->m_material->setViscosity(viscosity);
-
+			
+			// force to penetrate
+			object->m_material->setPenetrationForceThreshold(penetrationForce);
 		}
 
 		void addViscosityEffect(int objectID, double viscosity)
@@ -459,6 +461,8 @@ namespace NeedleSimPlugin
 
 		void addMembraneEffect(int objectID, double a_resistance, double a_friction_static, double a_friction_dynamic, double maxForce, double distanceToMaxForce, double a_springMass, double a_penetrationThreshold)
 		{
+			PRINTLN("adding membrane effect!")
+
 			// get object by index in the world scope
 			cGenericObject* object = world->getChild(objectID);
 
@@ -471,6 +475,8 @@ namespace NeedleSimPlugin
 			effect->spring.maxDist = distanceToMaxForce;
 			effect->m_springMass = a_springMass;
 			effect->m_penetrationThreshold = a_penetrationThreshold;
+
+			PRINTLN("membrane effect added!")
 
 			// link it to the object
 			object->addEffect(effect);
@@ -564,7 +570,7 @@ namespace NeedleSimPlugin
 
 		inline cVector3d Needle::computeAxialConstraintForce(cVector3d position, cVector3d & targetPos, cVector3d & targetDir, double & minDist, double & maxDist, double & maxForce)
 		{
-			//cVector3d position = m_hapticPoint->m_algorithmFingerProxy->getProxyGlobalPosition();
+			static cVector3d lastPosition(position);
 
 			cVector3d displacementToTarget = targetPos - position;
 
@@ -577,6 +583,8 @@ namespace NeedleSimPlugin
 			forceMagnitude = cClamp(forceMagnitude, 0.0, maxForce);
 
 			cVector3d springForce = displacementToTarget * forceMagnitude;
+
+			lastPosition = position;
 
 			return springForce;
 		}
@@ -727,12 +735,12 @@ namespace NeedleSimPlugin
 
 				// initialize the spring on the device position. 
 				// the tool is at first pulled back towards its initial entry point
-				spring.restPosition = tool->m_hapticTip->getLocalPosGoal(); //a_toolPos;
+				spring.restPosition = a_toolPos; //tool->m_hapticTip->getLocalPosGoal();
 			}
 			
-			//double devicePos[3];
-			//getDevicePosition(devicePos);
-			cVector3d pos = tool->m_hapticTip->getLocalPosGoal();
+			double devicePos[3];
+			getDevicePosition(devicePos);
+			cVector3d pos(devicePos);
 
 			// apply force onto the haptic device, pulling the tool toward the spring tail, wherever it may be
 			cVector3d force = computeSpringForce(pos, spring.restPosition, spring.minDist, spring.maxDist, spring.maxForce);

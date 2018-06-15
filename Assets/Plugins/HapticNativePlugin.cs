@@ -186,8 +186,11 @@ public class HapticNativePlugin
     public static extern bool isTouching(int objectId);
 
     [DllImport("UnityPlugin")]
+    public static extern void setToolRadius(double a_toolRadius);
+
+    [DllImport("UnityPlugin")]
     public static extern void setObjectProperties(int objectID, double stiffness, double friction_static,
-        double friction_dynamic, double viscosity);
+        double friction_dynamic, double viscosity, double penetrationForce);
 
     [DllImport("UnityPlugin")]
     public static extern void addViscosityEffect(int objectID, double viscosity);

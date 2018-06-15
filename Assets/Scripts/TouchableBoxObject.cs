@@ -29,6 +29,6 @@ public class TouchableBoxObject : HapticObject
 
     void Update()
     {
-        HapticNativePlugin.setObjectProperties(objectId, stiffness, friction_static, friction_dynamic, viscosity);
+        HapticNativePlugin.setObjectProperties(objectId, stiffness, friction_static, friction_dynamic, viscosity, penetrationForce);
     }
 }
