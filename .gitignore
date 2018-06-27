@@ -46,3 +46,5 @@ sysinfo.txt
 *.ipdb
 *.iobj
 Assets/Plugins/UnityPlugin.exp
+Assets/SteamVR/InteractionSystem\Longbow
+Assets/SteamVR/InteractionSystem/Longbow/
