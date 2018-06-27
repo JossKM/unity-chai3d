@@ -568,7 +568,7 @@ namespace NeedleSimPlugin
 		// Needle
 		///////////////////////////////////////////
 
-		inline cVector3d Needle::computeAxialConstraintForce(cVector3d position, cVector3d & targetPos, cVector3d & targetDir, double & minDist, double & maxDist, double & maxForce)
+		inline cVector3d Needle::computeAxialConstraintForce(cVector3d position, cVector3d & targetPos, cVector3d & targetDir, double & minDist, double & maxDist, double & maxForce, double& kDamping)
 		{
 			static cVector3d lastPosition(position);
 
@@ -585,6 +585,10 @@ namespace NeedleSimPlugin
 			cVector3d springForce = displacementToTarget * forceMagnitude;
 
 			lastPosition = position;
+
+			cVector3d vel = tool->getDeviceGlobalLinVel();
+			
+			springForce -= kDamping * vel;
 
 			return springForce;
 		}
@@ -634,7 +638,8 @@ namespace NeedleSimPlugin
 
 			if (axialConstraint.enabled)
 			{
-				cVector3d axialConstraintForce = computeAxialConstraintForce(devicePos, axialConstraint.position, axialConstraint.direction, axialConstraint.minDist, axialConstraint.maxDist, axialConstraint.maxForce);
+				double d = 0.01;
+				cVector3d axialConstraintForce = computeAxialConstraintForce(devicePos, axialConstraint.position, axialConstraint.direction, axialConstraint.minDist, axialConstraint.maxDist, axialConstraint.maxForce, d);
 				// need a better mapping to allow axial constraint to do its job. Look to diminishing returns from video games? 
 				
 				interactionForce += axialConstraintForce;

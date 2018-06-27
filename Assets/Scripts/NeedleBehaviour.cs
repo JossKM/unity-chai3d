@@ -130,7 +130,7 @@ public class NeedleBehaviour : MonoBehaviour
             //}
         }
         
-        hitList.Sort();
+        //hitList.Sort();
 
         return hitList;
     }

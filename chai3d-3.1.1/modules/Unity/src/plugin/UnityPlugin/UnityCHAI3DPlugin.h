@@ -14,7 +14,6 @@ namespace NeedleSimPlugin
 	//	virtual ~cPenetrablePoint();
 	//};
 
-
 	extern "C"
 	{
 
@@ -54,7 +53,7 @@ namespace NeedleSimPlugin
 			
 			bool isForceEngaged();
 
-			inline cVector3d computeAxialConstraintForce(cVector3d position, cVector3d& targetPos, cVector3d& targetDir, double& minDist, double& maxDist, double& maxForce);
+			inline cVector3d computeAxialConstraintForce(cVector3d position, cVector3d& targetPos, cVector3d& targetDir, double& minDist, double& maxDist, double& maxForce, double& kDamping);
 
 
 			void computeInteractionForces() override;
