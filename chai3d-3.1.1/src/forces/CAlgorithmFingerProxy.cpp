@@ -118,7 +118,6 @@ cAlgorithmFingerProxy::cAlgorithmFingerProxy()
     m_showEnabled = true;
 }
 
-
 //==============================================================================
 /*!
     This method Initializes the algorithm, including setting the pointer to the world
