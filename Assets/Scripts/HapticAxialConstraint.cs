@@ -6,11 +6,12 @@ using System.Collections;
 public class HapticAxialConstraint : MonoBehaviour
 {
     [Header("Press C to toggle")]
-    public bool enabled = false;
+    public bool constraintEnabled = false;
     public double minDist = 0.0d;
     public double maxDist = 0.2d;
     public double maxForce = 2.0d;
     public double damping = 0.5d;
+    
 
     private Transform origin;
 
@@ -32,13 +33,12 @@ public class HapticAxialConstraint : MonoBehaviour
 	{
 	    if (Input.GetKeyUp(KeyCode.C))
 	    {
-	        enabled = !enabled;
-
+	        constraintEnabled = !constraintEnabled;
 	    }
         
-	    HapticNativePlugin.SetAxialConstraint(enabled, transform.position - origin.position, transform.forward, minDist, maxDist, maxForce, damping);
+	    HapticNativePlugin.SetAxialConstraint(constraintEnabled, transform.position - origin.position, transform.forward, minDist, maxDist, maxForce, damping);
 
-	    if (enabled)
+	    if (constraintEnabled)
 	    {
             constraintSlave.rotation = originalSlaveOrientation * transform.rotation;
 	    }

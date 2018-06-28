@@ -523,7 +523,7 @@ namespace NeedleSimPlugin
 			tool->springProperties.maxForce = maxForce;
 		}
 
-		void setAxialConstraint(bool enabled, double position[], double direction[], double minDist, double maxDist, double maxForce, double damping)
+		void setNeedleAxialConstraint(bool enabled, double position[], double direction[], double minDist, double maxDist, double maxForce, double damping)
 		{
 			convertXYZToCHAI3D(position);
 			convertXYZToCHAI3D(direction);
@@ -535,6 +535,20 @@ namespace NeedleSimPlugin
 			tool->axialConstraint.maxDist = maxDist;
 			tool->axialConstraint.maxForce = maxForce;
 			tool->axialConstraint.damping = damping;
+		}
+
+		void setNeedleAxialSpring(bool enabled, double position[], double direction[], double minDist, double maxDist, double maxForce, double damping)
+		{
+			convertXYZToCHAI3D(position);
+			convertXYZToCHAI3D(direction);
+
+			tool->axialSpring.enabled = enabled;
+			tool->axialSpring.position = cVector3d(position);
+			tool->axialSpring.direction = cVector3d(direction);
+			tool->axialSpring.minDist = minDist;
+			tool->axialSpring.maxDist = maxDist;
+			tool->axialSpring.maxForce = maxForce;
+			tool->axialSpring.damping = damping;
 		}
 
 		//--------------------------------------------------------------------------
@@ -568,31 +582,6 @@ namespace NeedleSimPlugin
 		///////////////////////////////////////////
 		// Needle
 		///////////////////////////////////////////
-
-		inline cVector3d Needle::computeAxialConstraintForce(cVector3d position, cVector3d & targetPos, cVector3d & targetDir, double & minDist, double & maxDist, double & maxForce, double& kDamping)
-		{
-			//static cVector3d lastPosition(position);
-			//lastPosition = position;
-
-			cVector3d displacementToTarget = targetPos - position;
-
-			displacementToTarget = displacementToTarget.projectToPlane(targetDir);
-
-			double dist = displacementToTarget.length();
-			displacementToTarget.normalize();
-
-			double forceMagnitude = lmapd(dist, minDist, maxDist, 0.0, maxForce);
-			//forceMagnitude = cClamp(forceMagnitude, 0.0, maxForce);
-
-			cVector3d springForce = displacementToTarget * forceMagnitude;
-
-			cVector3d vel = tool->getDeviceGlobalLinVel().projectToPlane(targetDir);;
-			springForce -= kDamping * vel * maxForce;
-
-			springForce.clamp(maxForce);
-
-			return springForce;
-		}
 
 		void Needle::computeInteractionForces()
 		{
@@ -640,8 +629,16 @@ namespace NeedleSimPlugin
 			if (axialConstraint.enabled)
 			{
 				cVector3d axialConstraintForce = computeAxialConstraintForce(devicePos, axialConstraint.position, axialConstraint.direction, axialConstraint.minDist, axialConstraint.maxDist, axialConstraint.maxForce, axialConstraint.damping);
-				// need a better mapping to allow axial constraint to do its job. Look to diminishing returns from video games? 
+				// might need a better mapping to allow axial constraint to do its job while other forces apply. Look to diminishing returns from video games? 
 				
+				interactionForce += axialConstraintForce;
+			}
+
+			if (axialSpring.enabled)
+			{
+				cVector3d axialConstraintForce = computeAxialSpringForce(devicePos, axialConstraint.position, axialConstraint.direction, axialConstraint.minDist, axialConstraint.maxDist, axialConstraint.maxForce, axialConstraint.damping);
+				// might need a better mapping to allow axial constraint to do its job while other forces apply. Look to diminishing returns from video games? 
+
 				interactionForce += axialConstraintForce;
 			}
 
@@ -823,4 +820,41 @@ namespace NeedleSimPlugin
 	//{
 	//}
 
+	inline cVector3d computeAxialConstraintForce(cVector3d position, cVector3d & targetPos, cVector3d & targetDir, double & minDist, double & maxDist, double & maxForce, double& kDamping)
+	{
+		cVector3d displacementToTarget = targetPos - position;
+		displacementToTarget = displacementToTarget.projectToPlane(targetDir);
+		double dist = displacementToTarget.length();
+		displacementToTarget.normalize();
+
+		// spring
+		double forceMagnitude = lmapd(dist, minDist, maxDist, 0.0, maxForce);
+		cVector3d springForce = displacementToTarget * forceMagnitude;
+
+		// speed damping
+		cVector3d vel = tool->getDeviceGlobalLinVel().projectToPlane(targetDir);;
+		springForce -= kDamping * vel * maxForce;
+
+		springForce.clamp(maxForce);
+		return springForce;
+	}
+
+	inline cVector3d computeAxialSpringForce(cVector3d position, cVector3d & targetPos, cVector3d & targetDir, double & minDist, double & maxDist, double & maxForce, double & kDamping)
+	{
+		cVector3d displacementToTarget = targetPos - position;
+		displacementToTarget = displacementToTarget.projectToVector(targetDir);
+		double dist = displacementToTarget.length();
+		displacementToTarget.normalize();
+
+		// spring
+		double forceMagnitude = lmapd(dist, minDist, maxDist, 0.0, maxForce);
+		cVector3d springForce = displacementToTarget * forceMagnitude;
+
+		// speed damping
+		cVector3d vel = tool->getDeviceGlobalLinVel().projectToVector(targetDir);;
+		springForce -= kDamping * vel * maxForce;
+
+		springForce.clamp(maxForce);
+		return springForce;
+	}
 }

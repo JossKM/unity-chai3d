@@ -73,7 +73,7 @@ public class NeedleBehaviour : MonoBehaviour
                     constraint.transform.position = punctureData.entryPoint;
                 }
                 isPuncturing = true;
-                constraint.enabled = true;
+                constraint.constraintEnabled = true;
 
             } else
             {
@@ -106,7 +106,7 @@ public class NeedleBehaviour : MonoBehaviour
         } else
         {
             isPuncturing = false;
-            constraint.enabled = false;
+            constraint.constraintEnabled = false;
 
             Debug.DrawRay(needleRay.origin, needleRay.direction * needleLength, Color.green);
         }

@@ -27,6 +27,35 @@ namespace NeedleSimPlugin
 
 		};
 
+		struct AxialSpring
+		{
+			bool enabled = false;
+			cVector3d direction;
+			cVector3d position;
+			double minDist;
+			double maxDist;
+			double maxForce;
+			double damping;
+		};
+
+		// 1-dimensional layer
+		class HapticLayer
+		{
+			bool m_penetrated;
+
+			double m_springForce; // cutting resistance at tip
+			double m_frictionForce; // max friction force once penetrated
+		};
+
+		class HapticLayerContainer
+		{
+			std::vector<HapticLayer> layers;
+			cVector3d direction;
+			cVector3d entryPoint;
+
+			inline cVector3d computeForces(cVector3d& devicePosition, double forceScalar = 1.0);
+		};
+
 		//Custom simulation tool
 		class Needle : public cGenericTool
 		{
@@ -40,22 +69,11 @@ namespace NeedleSimPlugin
 			Spring springProperties;
 
 			// to constrain movement to a specific axis at a specific location in worldspace
-			struct AxialConstraint
-			{
-				bool enabled = false;
-				cVector3d direction;
-				cVector3d position;
-				double minDist;
-				double maxDist;
-				double maxForce;
-				double damping;
+			AxialSpring axialConstraint;
 
-			} axialConstraint;
+			AxialSpring axialSpring;
 			
 			bool isForceEngaged();
-
-			inline cVector3d computeAxialConstraintForce(cVector3d position, cVector3d& targetPos, cVector3d& targetDir, double& minDist, double& maxDist, double& maxForce, double& kDamping);
-
 
 			void computeInteractionForces() override;
 
@@ -146,7 +164,10 @@ namespace NeedleSimPlugin
 		FUNCDLL_API void setSpringProperties(bool enabled, double position[], double minDist, double maxDist, double maxForce);
 		
 		// set constraint to only allow movement along a specific axis given by a direction vector. passing 0,0,0 will disable the constraint
-		FUNCDLL_API void setAxialConstraint(bool enabled, double position[], double direction[], double minDist, double maxDist, double maxForce, double damping);
+		FUNCDLL_API void setNeedleAxialConstraint(bool enabled, double position[], double direction[], double minDist, double maxDist, double maxForce, double damping);
+		
+		FUNCDLL_API void setNeedleAxialSpring(bool enabled, double position[], double direction[], double minDist, double maxDist, double maxForce, double damping);
+
 
 		// Like Unity, Chai3D uses a right handed coordinate system, but -z x y
 		FUNCDLL_API void convertXYZFromCHAI3D(double inputXYZ[]);
@@ -179,4 +200,10 @@ namespace NeedleSimPlugin
 	{
 		return (1.0 - tValue) * from + (tValue * to);
 	}
+
+	// applies perpendicular to direction
+	inline cVector3d computeAxialConstraintForce(cVector3d position, cVector3d& targetPos, cVector3d& targetDir, double& minDist, double& maxDist, double& maxForce, double& kDamping);
+
+	// applies forces parallel to direction
+	inline cVector3d computeAxialSpringForce(cVector3d position, cVector3d& targetPos, cVector3d& targetDir, double& minDist, double& maxDist, double& maxForce, double& kDamping);
 }
