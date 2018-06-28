@@ -857,4 +857,32 @@ namespace NeedleSimPlugin
 		springForce.clamp(maxForce);
 		return springForce;
 	}
+
+
+	HapticLayerContainer::HapticLayerContainer()
+	{
+		//create a default
+
+		std::list <util::NodeGraphTableEntry<HapticLayer>> layerList;
+
+		layers.m_data.push_back(layerList);
+	}
+
+	HapticLayerContainer::~HapticLayerContainer()
+	{
+	}
+
+	inline cVector3d HapticLayerContainer::computeForces(cVector3d & devicePosition, double forceScalar)
+	{
+		// what is the displacement parallel to the layers?
+		cVector3d displacementOnAxis = (devicePosition - entryPoint).projectToVector(direction);
+
+		double penetrationDepth = displacementOnAxis.length();
+		
+		auto layerList = layers.m_data[0];
+
+		//HapticLayer layer = layers.lookupValue(penetrationDepth);
+
+		return cVector3d();
+	}
 }

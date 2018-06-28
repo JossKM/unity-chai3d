@@ -4,6 +4,8 @@
 #define FUNCDLL_API __declspec(dllimport) 
 #endif
 
+#include "Path.h"
+
 namespace NeedleSimPlugin
 {
 	//class cPenetrablePoint : public cHapticPoint
@@ -49,11 +51,19 @@ namespace NeedleSimPlugin
 
 		class HapticLayerContainer
 		{
-			std::vector<HapticLayer> layers;
+		public:
+			HapticLayerContainer();
+			~HapticLayerContainer();
+
+		public:
+			inline cVector3d computeForces(cVector3d& devicePosition, double forceScalar = 1.0);
+
+		private:
+			//LUT of layers. does not use multiple intervals. Only one.
+			util::Path<HapticLayer> layers;
+
 			cVector3d direction;
 			cVector3d entryPoint;
-
-			inline cVector3d computeForces(cVector3d& devicePosition, double forceScalar = 1.0);
 		};
 
 		//Custom simulation tool
@@ -76,19 +86,9 @@ namespace NeedleSimPlugin
 			bool isForceEngaged();
 
 			void computeInteractionForces() override;
-
-			// compute all forces parallel to the needle hull
-			//void computeOnAxisForces();
-
-			// compute all forces perpendicular to the needle hull
-			//void computeOffAxisForces();
-
 			
 		private:
-			//cVector3d onAxisForce;
-			//cVector3d offAxisForce;
-
-			bool m_isPenetrating = false;
+			//bool m_isPenetrating = false;
 		};
 
 		// a spring that moves. one end, the "head", is attached to the haptic tool, the "tail" is attached to a mass that has static and dynamic friction modelled on it.
@@ -191,7 +191,7 @@ namespace NeedleSimPlugin
 	inline cVector3d computeSpringForce(const cVector3d& position, cVector3d& targetPos, double& minDist, double& maxDist, double& maxForce);
 
 	template<typename T, typename R>
-	inline R lerpd(T from, T to, double tValue)
+	inline R lerp(T from, T to, double tValue)
 	{
 		return (1.0 - tValue) * from + (tValue * to);
 	}
