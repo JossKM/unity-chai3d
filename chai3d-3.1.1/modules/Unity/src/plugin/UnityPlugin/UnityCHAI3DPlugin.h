@@ -48,6 +48,7 @@ namespace NeedleSimPlugin
 				double minDist;
 				double maxDist;
 				double maxForce;
+				double damping;
 
 			} axialConstraint;
 			
@@ -145,7 +146,7 @@ namespace NeedleSimPlugin
 		FUNCDLL_API void setSpringProperties(bool enabled, double position[], double minDist, double maxDist, double maxForce);
 		
 		// set constraint to only allow movement along a specific axis given by a direction vector. passing 0,0,0 will disable the constraint
-		FUNCDLL_API void setAxialConstraint(bool enabled, double position[], double direction[], double minDist, double maxDist, double maxForce);
+		FUNCDLL_API void setAxialConstraint(bool enabled, double position[], double direction[], double minDist, double maxDist, double maxForce, double damping);
 
 		// Like Unity, Chai3D uses a right handed coordinate system, but -z x y
 		FUNCDLL_API void convertXYZFromCHAI3D(double inputXYZ[]);

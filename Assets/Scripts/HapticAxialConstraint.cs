@@ -10,6 +10,7 @@ public class HapticAxialConstraint : MonoBehaviour
     public double minDist = 0.0d;
     public double maxDist = 0.2d;
     public double maxForce = 2.0d;
+    public double damping = 0.5d;
 
     private Transform origin;
 
@@ -35,7 +36,7 @@ public class HapticAxialConstraint : MonoBehaviour
 
 	    }
         
-	    HapticNativePlugin.SetAxialConstraint(enabled, transform.position - origin.position, transform.forward, minDist, maxDist, maxForce);
+	    HapticNativePlugin.SetAxialConstraint(enabled, transform.position - origin.position, transform.forward, minDist, maxDist, maxForce, damping);
 
 	    if (enabled)
 	    {

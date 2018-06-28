@@ -6,6 +6,7 @@ public class CameraControl : MonoBehaviour
     public bool moveWorkspace = true;
 
     public float moveSpeed = 1.0f;
+    public float rotationSpeed = 1.0f;
     public Transform workspace;
 
 	private float rotationX = 0f;
@@ -30,16 +31,16 @@ public class CameraControl : MonoBehaviour
         }
 
 		float scroll = Input.GetAxis("Mouse ScrollWheel");
-		transform.Translate(0, 0f, scroll * 0.5f * moveSpeed, Space.Self);
+		transform.Translate(0, 0f, scroll * 0.1f * moveSpeed, Space.Self);
 
 		if (Input.GetMouseButton (1)) {
-			rotationX += Input.GetAxis ("Mouse X") * moveSpeed * 500f * Time.deltaTime;
-			rotationY += Input.GetAxis ("Mouse Y") * moveSpeed * 500f * Time.deltaTime;
+			rotationX += Input.GetAxis ("Mouse X") * rotationSpeed * 500f * Time.deltaTime;
+			rotationY += Input.GetAxis ("Mouse Y") * rotationSpeed * 500f * Time.deltaTime;
 			transform.localEulerAngles = new Vector3 (-rotationY, rotationX, 0);
 		}
 		else if (Input.GetMouseButton (2)) {
-			var xMove = Input.GetAxis ("Mouse X") * -moveSpeed * Time.deltaTime;
-			var yMove = Input.GetAxis ("Mouse Y") * -moveSpeed * Time.deltaTime;
+			var xMove = Input.GetAxis ("Mouse X") * -rotationSpeed * Time.deltaTime;
+			var yMove = Input.GetAxis ("Mouse Y") * -rotationSpeed * Time.deltaTime;
 			transform.Translate(xMove, yMove, 0f, Space.Self);
 		}
 
@@ -59,10 +60,10 @@ public class CameraControl : MonoBehaviour
 	    if (moveWorkspace)
 	    {
 	        workspace.position = transform.position + workspaceOffset;
-	    }
+            UpdateHapticRotation();
+        }
         
         UpdateHapticPosition();
-        UpdateHapticRotation();
     }
 
     private void UpdateHapticPosition()

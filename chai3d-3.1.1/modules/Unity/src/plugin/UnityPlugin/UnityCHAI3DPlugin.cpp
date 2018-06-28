@@ -523,7 +523,7 @@ namespace NeedleSimPlugin
 			tool->springProperties.maxForce = maxForce;
 		}
 
-		void setAxialConstraint(bool enabled, double position[], double direction[], double minDist, double maxDist, double maxForce)
+		void setAxialConstraint(bool enabled, double position[], double direction[], double minDist, double maxDist, double maxForce, double damping)
 		{
 			convertXYZToCHAI3D(position);
 			convertXYZToCHAI3D(direction);
@@ -534,6 +534,7 @@ namespace NeedleSimPlugin
 			tool->axialConstraint.minDist = minDist;
 			tool->axialConstraint.maxDist = maxDist;
 			tool->axialConstraint.maxForce = maxForce;
+			tool->axialConstraint.damping = damping;
 		}
 
 		//--------------------------------------------------------------------------
@@ -570,7 +571,8 @@ namespace NeedleSimPlugin
 
 		inline cVector3d Needle::computeAxialConstraintForce(cVector3d position, cVector3d & targetPos, cVector3d & targetDir, double & minDist, double & maxDist, double & maxForce, double& kDamping)
 		{
-			static cVector3d lastPosition(position);
+			//static cVector3d lastPosition(position);
+			//lastPosition = position;
 
 			cVector3d displacementToTarget = targetPos - position;
 
@@ -580,15 +582,14 @@ namespace NeedleSimPlugin
 			displacementToTarget.normalize();
 
 			double forceMagnitude = lmapd(dist, minDist, maxDist, 0.0, maxForce);
-			forceMagnitude = cClamp(forceMagnitude, 0.0, maxForce);
+			//forceMagnitude = cClamp(forceMagnitude, 0.0, maxForce);
 
 			cVector3d springForce = displacementToTarget * forceMagnitude;
 
-			lastPosition = position;
+			cVector3d vel = tool->getDeviceGlobalLinVel().projectToPlane(targetDir);;
+			springForce -= kDamping * vel * maxForce;
 
-			cVector3d vel = tool->getDeviceGlobalLinVel();
-			
-			springForce -= kDamping * vel;
+			springForce.clamp(maxForce);
 
 			return springForce;
 		}
@@ -638,8 +639,7 @@ namespace NeedleSimPlugin
 
 			if (axialConstraint.enabled)
 			{
-				double d = 0.01;
-				cVector3d axialConstraintForce = computeAxialConstraintForce(devicePos, axialConstraint.position, axialConstraint.direction, axialConstraint.minDist, axialConstraint.maxDist, axialConstraint.maxForce, d);
+				cVector3d axialConstraintForce = computeAxialConstraintForce(devicePos, axialConstraint.position, axialConstraint.direction, axialConstraint.minDist, axialConstraint.maxDist, axialConstraint.maxForce, axialConstraint.damping);
 				// need a better mapping to allow axial constraint to do its job. Look to diminishing returns from video games? 
 				
 				interactionForce += axialConstraintForce;

@@ -151,10 +151,10 @@ public class HapticNativePlugin
 
     [DllImport("UnityPlugin")]
     protected static extern void setAxialConstraint(bool enabled, double[] position, double[] direction, double minDist,
-        double maxDist, double maxForce);
+        double maxDist, double maxForce, double damping);
 
     public static void SetAxialConstraint(bool enabled, Vector3 anchorPosition, Vector3 anchorDirection, double minDist,
-        double maxDist, double maxForce)
+        double maxDist, double maxForce, double damping)
     {
         double[] anchorPos = new double[3];
         double[] anchorDir = new double[3];
@@ -165,7 +165,7 @@ public class HapticNativePlugin
         anchorDir[0] = (double) (anchorDirection.x);
         anchorDir[1] = (double) (anchorDirection.y);
         anchorDir[2] = (double) (anchorDirection.z);
-        setAxialConstraint(enabled, anchorPos, anchorDir, minDist, maxDist, maxForce);
+        setAxialConstraint(enabled, anchorPos, anchorDir, minDist, maxDist, maxForce, damping);
     }
 
     // wrapperless
