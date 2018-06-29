@@ -35,13 +35,16 @@ public class HapticAxialConstraint : MonoBehaviour
 	    {
 	        constraintEnabled = !constraintEnabled;
 	    }
-        
-	    HapticNativePlugin.SetAxialConstraint(constraintEnabled, transform.position - origin.position, transform.forward, minDist, maxDist, maxForce, damping);
 
-	    if (constraintEnabled)
+        Vector3 pos = transform.position - origin.position;
+
+        HapticNativePlugin.SetAxialConstraint(constraintEnabled, pos, transform.forward, minDist, maxDist, maxForce, damping);
+        HapticNativePlugin.SetHapticEntryPoint(pos, transform.forward);
+
+        if (constraintEnabled)
 	    {
             constraintSlave.rotation = originalSlaveOrientation * transform.rotation;
-	    }
+        }
 	}
 }
 

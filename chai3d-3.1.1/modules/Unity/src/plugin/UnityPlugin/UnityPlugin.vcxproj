@@ -161,9 +161,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Path.cpp" />
     <ClCompile Include="UnityCHAI3DPlugin.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Path.h" />
     <ClInclude Include="UnityCHAI3DPlugin.h" />
   </ItemGroup>
   <ItemGroup>

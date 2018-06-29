@@ -61,6 +61,8 @@ namespace NeedleSimPlugin
 		// get spec of haptic device
 		cHapticDeviceInfo hapticDeviceInfo;
 
+		HapticLayerContainer patient;
+
 #ifdef HAPTIC_DEBUG
 		bool lastForceEngagedState(false);
 #endif
@@ -92,7 +94,7 @@ namespace NeedleSimPlugin
 			// get access to the first available haptic device
 			if (!handler->getDevice(*hapticDevice, 0))
 				return false;
-			
+
 			// retrieve information about the current haptic device
 			hapticDeviceInfo = (*hapticDevice)->getSpecifications();
 
@@ -402,7 +404,7 @@ namespace NeedleSimPlugin
 
 			// define some dynamic friction
 			box->m_material->setDynamicFriction(0.5);
-			
+
 			// set the position of the object at the center of the world
 			convertXYZToCHAI3D(objectPos);
 			box->setLocalPos(objectPos[0], objectPos[1], objectPos[2]);
@@ -445,7 +447,7 @@ namespace NeedleSimPlugin
 
 			// viscosity (only active if a viscosity effect is also on it)
 			object->m_material->setViscosity(viscosity);
-			
+
 			// force to penetrate
 			object->m_material->setPenetrationForceThreshold(penetrationForce);
 		}
@@ -463,8 +465,8 @@ namespace NeedleSimPlugin
 		{
 			PRINTLN("adding membrane effect!")
 
-			// get object by index in the world scope
-			cGenericObject* object = world->getChild(objectID);
+				// get object by index in the world scope
+				cGenericObject* object = world->getChild(objectID);
 
 			// create effect and set properties
 			SpringyMembrane* effect = new SpringyMembrane(object);
@@ -478,8 +480,8 @@ namespace NeedleSimPlugin
 
 			PRINTLN("membrane effect added!")
 
-			// link it to the object
-			object->addEffect(effect);
+				// link it to the object
+				object->addEffect(effect);
 		}
 
 		void translateObjects(double translation[])
@@ -549,6 +551,16 @@ namespace NeedleSimPlugin
 			tool->axialSpring.maxDist = maxDist;
 			tool->axialSpring.maxForce = maxForce;
 			tool->axialSpring.damping = damping;
+		}
+
+		void setHapticEntryPoint(double position[], double direction[])
+		{
+			convertXYZToCHAI3D(position);
+			convertXYZToCHAI3D(direction);
+
+			patient.m_entryPoint = cVector3d(position);
+			patient.m_entryDirection = cVector3d(direction);
+			//PRINTLN("entry point set!")
 		}
 
 		//--------------------------------------------------------------------------
@@ -630,7 +642,7 @@ namespace NeedleSimPlugin
 			{
 				cVector3d axialConstraintForce = computeAxialConstraintForce(devicePos, axialConstraint.position, axialConstraint.direction, axialConstraint.minDist, axialConstraint.maxDist, axialConstraint.maxForce, axialConstraint.damping);
 				// might need a better mapping to allow axial constraint to do its job while other forces apply. Look to diminishing returns from video games? 
-				
+
 				interactionForce += axialConstraintForce;
 			}
 
@@ -641,6 +653,8 @@ namespace NeedleSimPlugin
 
 				interactionForce += axialConstraintForce;
 			}
+
+			interactionForce += patient.computeForces(devicePos);
 
 			// avoid trying to apply more force than possible
 			interactionForce.clamp(hapticDeviceInfo.m_maxLinearForce);
@@ -660,7 +674,7 @@ namespace NeedleSimPlugin
 			int numPoints = 1;
 			for (int i = 0; i < numPoints; i++)
 			{
-				cHapticPoint* newPoint = new cHapticPoint(this); 
+				cHapticPoint* newPoint = new cHapticPoint(this);
 
 				m_hapticPoints.push_back(newPoint);
 			}
@@ -739,7 +753,7 @@ namespace NeedleSimPlugin
 				// the tool is at first pulled back towards its initial entry point
 				spring.restPosition = a_toolPos; //tool->m_hapticTip->getLocalPosGoal();
 			}
-			
+
 			double devicePos[3];
 			getDevicePosition(devicePos);
 			cVector3d pos(devicePos);
@@ -861,11 +875,44 @@ namespace NeedleSimPlugin
 
 	HapticLayerContainer::HapticLayerContainer()
 	{
-		//create a default
+		m_lastLayerPenetrated = -1;
 
-		std::list <util::NodeGraphTableEntry<HapticLayer>> layerList;
 
-		layers.m_data.push_back(layerList);
+		//create a default dataset with skin.
+
+		// add material
+		HapticLayer skin = HapticLayer();
+		skin.m_restingDepth = 0.0;
+		skin.m_frictionForce = 3.0;
+		skin.setStiffnessByExponentAndDistance(2.0, 0.005, 7.0);
+
+		m_layerMaterials.push_back(skin);
+
+
+		//// add data for where the material is
+		//std::list <util::NodeGraphTableEntry<unsigned int>> layerList;
+		//
+		//{// first layer start
+		//
+		//	util::NodeGraphTableEntry<unsigned int> layer;
+		//	float distance = 0.0f;
+		//	layer.distanceAlongPath = distance;
+		//	layer.t = distance;
+		//	layer.val = 0;
+		//	layerList.push_back(layer);
+		//}
+		//
+		//{// first layer end
+		//
+		//	util::NodeGraphTableEntry<unsigned int> layer;
+		//	float distance = 1.0f;
+		//	layer.distanceAlongPath = distance;
+		//	layer.t = distance;
+		//	layer.val = 0;
+		//	layerList.push_back(layer);
+		//}
+		//
+		//m_layerLUT.m_data.push_back(layerList);
 	}
 
 	HapticLayerContainer::~HapticLayerContainer()
@@ -875,14 +922,103 @@ namespace NeedleSimPlugin
 	inline cVector3d HapticLayerContainer::computeForces(cVector3d & devicePosition, double forceScalar)
 	{
 		// what is the displacement parallel to the layers?
-		cVector3d displacementOnAxis = (devicePosition - entryPoint).projectToVector(direction);
+		cVector3d displacement = (devicePosition - m_entryPoint);
 
-		double penetrationDepth = displacementOnAxis.length();
-		
-		auto layerList = layers.m_data[0];
+		double penetrationDepth = displacement.dot(m_entryDirection);
 
-		//HapticLayer layer = layers.lookupValue(penetrationDepth);
+		double netForceMagnitude = 0.0;
 
-		return cVector3d();
+		// for each layer, determine if the layer is already being penetrated.
+		// If it has, then apply the friction force. If not, then apply the tension force.
+		int numLayers = m_layerMaterials.size();
+		for (int layerIdx = 0; layerIdx < numLayers; layerIdx++)
+		{
+			auto layer = &m_layerMaterials[layerIdx];
+
+			if (m_lastLayerPenetrated >= layerIdx)
+			{
+				// penetrated behaviour
+				double force = 0.0; // Joss TODO: compute this force
+
+				// if behind the material's depth
+				if (penetrationDepth < layer->m_restingDepth)
+				{
+					//it is no longer penetrated.
+					m_lastLayerPenetrated = max(m_lastLayerPenetrated - 1, -1);
+					//any materials after it are also no longer penetrated.
+				}
+
+				//PRINTLN("last layer: " << m_lastLayerPenetrated << "| pen depth: " << penetrationDepth)
+
+				netForceMagnitude += force;
+
+				//PRINTLN("inside layer" + layerIdx)
+			}
+			else
+			{
+				// not-yet-penetrated behaviour
+
+				double displacement = penetrationDepth - layer->m_restingDepth;
+
+				// determine where the haptic tip is in relation to the layer's rest position in 1D.
+				double force = layer->computeTensionForce(displacement);
+
+
+				// if the force is enough to penetrate it, go through.
+				if(force >= layer->m_penetrationThreshold)
+				{
+					m_lastLayerPenetrated = layerIdx;
+
+					PRINTLN("penetrated layer" << layerIdx)
+				}
+				else
+				{
+
+					//PRINTLN("pushing on layer" << layerIdx)
+				}
+
+				netForceMagnitude += force;
+			}
+		}
+
+		cVector3d outputForce = -m_entryDirection;
+		outputForce.normalize();
+		outputForce.mul(netForceMagnitude);
+
+		return outputForce;
 	}
+	HapticLayer::HapticLayer()
+	{
+		m_stiffnessExponent = 1.0;
+		m_frictionForce = 0.1;
+		m_penetrationThreshold = 1.0;
+		m_displacementPoint = 0.0;
+		m_restingDepth = 0.0;
+	}
+	double HapticLayer::computeTensionForce(const double& displacement)
+	{
+		double outputForce = 0.0;
+
+		// the layer is receiving pressure
+		if (displacement > 0.0)
+		{
+			outputForce = min(m_stiffness * std::pow(displacement, m_stiffnessExponent), m_penetrationThreshold);
+		}
+
+		return outputForce;
+	}
+
+	void HapticLayer::setStiffnessByExponentAndDistance(double a_stiffnessExponent, double distance, double a_penetrationThreshold)
+	{
+		m_stiffnessExponent = a_stiffnessExponent;
+		m_penetrationThreshold = a_penetrationThreshold;
+		m_stiffness = m_penetrationThreshold / (std::pow(distance, m_stiffnessExponent));
+	}
+
+	//inline void HapticLayer::setProperties(const double & a_stiffness, const double & a_stiffnessExponent, const double & a_penetrationThreshold)
+	//{
+	//	m_stiffness = a_stiffness;
+	//	m_stiffnessExponent = a_stiffnessExponent;
+	//	m_penetrationThreshold = a_penetrationThreshold;
+	//}
 }

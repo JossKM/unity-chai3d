@@ -169,6 +169,23 @@ public class HapticNativePlugin
     }
 
     [DllImport("UnityPlugin")]
+    protected static extern void setHapticEntryPoint(double[] position, double[] direction);
+
+    public static void SetHapticEntryPoint(Vector3 anchorPosition, Vector3 anchorDirection)
+    {
+        double[] anchorPos = new double[3];
+        double[] anchorDir = new double[3];
+        anchorPos[0] = (double)(anchorPosition.x);
+        anchorPos[1] = (double)(anchorPosition.y);
+        anchorPos[2] = (double)(anchorPosition.z);
+
+        anchorDir[0] = (double)(anchorDirection.x);
+        anchorDir[1] = (double)(anchorDirection.y);
+        anchorDir[2] = (double)(anchorDirection.z);
+        setHapticEntryPoint(anchorPos, anchorDir);
+    }
+
+    [DllImport("UnityPlugin")]
     protected static extern void setNeedleAxialSpring(bool enabled, double[] position, double[] direction, double minDist,
        double maxDist, double maxForce, double damping);
 

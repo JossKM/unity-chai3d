@@ -40,13 +40,45 @@ namespace NeedleSimPlugin
 			double damping;
 		};
 
-		// 1-dimensional layer
+		// 1-dimensional layer. Has a state
 		class HapticLayer
 		{
-			bool m_penetrated;
+		public:
+			HapticLayer(); //m_penetrated = false; }
+			~HapticLayer() {}
 
-			double m_springForce; // cutting resistance at tip
+			// force applied before penetration
+			// uses formula: outputForce = stiffness * displacement^stiffnessExponent
+			// caps at penetration threshold; will not output any higher than that
+			double computeTensionForce(const double& displacement);
+
+			// force applied after penetration 
+			// Joss TODO:
+			// double computeFrictionForce(const double& contactDepth);
+
+			//bool m_penetrated;
+
+			// the resting depth of the layer, relative to the entry point of the needle
+			double m_restingDepth; 
+
+			//inline void setProperties(const double& a_stiffness, const double& a_stiffnessExponent, const double& a_penetrationThreshold);
+
+			// sets the scalar m_stiffness such that at a displacement of {distance} units, the maximum force will be achieved.
+			void setStiffnessByExponentAndDistance(double m_stiffnessExponent, double distance, double a_penetrationThreshold);
+
+			//// pre-penetration parameters ///////////
+			
+			// behaviour of the force function. e.g. at 1 it is linear. at 2 it is quadratic. at (0, 1) it is logarithmic. at 0 it is constant
+			double m_stiffness;
+			double m_stiffnessExponent; 
+			double m_penetrationThreshold; // maximum force before penetration
+			
+			//// post-penetration parameters ///////////
 			double m_frictionForce; // max friction force once penetrated
+
+		private:
+			// where is the layer is in contact with a penetrator such as a needle, relative to its rest position
+			double m_displacementPoint;
 		};
 
 		class HapticLayerContainer
@@ -55,15 +87,24 @@ namespace NeedleSimPlugin
 			HapticLayerContainer();
 			~HapticLayerContainer();
 
+			//void initializeLayers(unsigned int numLayers);
+
 		public:
 			inline cVector3d computeForces(cVector3d& devicePosition, double forceScalar = 1.0);
 
-		private:
 			//LUT of layers. does not use multiple intervals. Only one.
-			util::Path<HapticLayer> layers;
 
-			cVector3d direction;
-			cVector3d entryPoint;
+			// this LUT maps indices of entries in the layer materials container
+			//util::Path<unsigned int> m_layerLUT; 
+			
+			// holds the material properties and states
+			std::vector<HapticLayer> m_layerMaterials;
+
+			cVector3d m_entryDirection;
+			cVector3d m_entryPoint;
+
+			// index of the last layer material that was penetrated. During needle insertion this keeps track of which layers are penetrated and which are not.
+			int m_lastLayerPenetrated; // an index of -1 means no layers are being penetrated
 		};
 
 		//Custom simulation tool
@@ -167,6 +208,8 @@ namespace NeedleSimPlugin
 		FUNCDLL_API void setNeedleAxialConstraint(bool enabled, double position[], double direction[], double minDist, double maxDist, double maxForce, double damping);
 		
 		FUNCDLL_API void setNeedleAxialSpring(bool enabled, double position[], double direction[], double minDist, double maxDist, double maxForce, double damping);
+
+		FUNCDLL_API void setHapticEntryPoint(double position[], double direction[]);
 
 
 		// Like Unity, Chai3D uses a right handed coordinate system, but -z x y

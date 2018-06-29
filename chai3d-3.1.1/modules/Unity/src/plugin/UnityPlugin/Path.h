@@ -2,10 +2,29 @@
 // Authored By: Joss Moo-Young - 100586602
 // Modified By: Shawn Matthews
 
+/*
+If you need to know how this works, I am deeply sorry.
+
+A Path represents a lookup table (LUT) with irregular intervals. It contains a vector of lists of templated structs
+
+The LUT is divided into intervals.
+Each interval contains a number of entries.
+Imagine it as a 2D chart.
+
+each entry in the list, of type NodeGraphTableEntry contains a value of type T, 
+a float t-value, representing its interpolation value within its interval e.g. 0 if it is the firs in the interval, 0.5 if it is the middle of 3, 1.0 if it is the last one.
+a float distance along total path, representing its global interpolation value.
+
+This is an example Path with 2 intervals, each with 2 in the list. {value, t, distanceAlongPath}
+
+interval 0: [{"A", 0.0, 0.00}->{"B", 1.0, 0.25}]
+interval 1: [{"C", 0.0, 0.75}->{"D", 1.0, 1.00}]
+*/
+
+
 #pragma once
 #include <vector>
 #include <list>
-//#include "UtilityMath.h"
 
 
 namespace util
@@ -31,6 +50,7 @@ namespace util
 	}
 
 
+	// This data type represents an entry in the LUT.
 	template<class T>
 	struct NodeGraphTableEntry
 	{
@@ -127,31 +147,6 @@ namespace util
 	}
 
 	template<class T>
-	inline void Path<T>::updateDistances()
-	{
-		double totalDistance = 0.0;
-		// will get constantly updated. represents total distance along whole curve
-		for (int interval = 0; interval < m_data.size(); interval++) // interval (the current keyNode)
-		{
-			// compute pairwise distances and distance along path for all points in the table
-			std::list<NodeGraphTableEntry<T>>& table = m_data[interval];
-			table.front().distanceAlongPath = totalDistance;
-			std::list<NodeGraphTableEntry<T>>::iterator row = table.begin();
-
-			while (std::next(row) != table.end())
-			{
-				T lastRow = row->val;
-				++row;
-				T currentRow = row->val;
-				float pairwiseDist = glm::length(currentRow - lastRow);
-				totalDistance += pairwiseDist;
-				row->distanceAlongPath = totalDistance;
-			}
-		}
-		m_length = (float)totalDistance;
-	}
-
-	template<class T>
 	inline unsigned int Path<T>::lookupInterval(const float & distance)
 	{
 		unsigned int interval = m_data.size() - 1;
@@ -226,7 +221,7 @@ namespace util
 			ret = lerp(iter->val, iter_next->val, tValue);
 		}
 		return ret;
-		}
+	}
 
 	template<class T>
 	inline T Path<T>::lookupPointIndexAndDistValue(int a_index, float a_distAlongPath)
@@ -277,18 +272,4 @@ namespace util
 		ret = lerp(iter->val, iter_next->val, tEvenMoreLocal);
 		return ret;
 	}
-
-	template<>
-	inline Path<float> createDefaultTable() // a straight line from 0 to 1 of slope 1. if you interpolate along this spline, you will get a lerp.
-	{
-		Path<float> ret = Path<float>();
-		std::list<NodeGraphTableEntry<float>> intervalData = std::list<NodeGraphTableEntry<float>>();
-		NodeGraphTableEntry<float> entry = NodeGraphTableEntry<float>(0.0f, 0.0f, 0.0f);
-		intervalData.push_back(entry);
-		entry = NodeGraphTableEntry<float>(1.0f, 1.0f, 1.0f);
-		intervalData.push_back(entry);
-		ret.m_data.push_back(intervalData);
-		ret.updateDistances();
-		return ret;
-	}
-	}
+}

@@ -21,7 +21,7 @@ public class NeedleBehaviour : MonoBehaviour
     public float needleLength = 0.1f;
 
     // how far ahead to cast rays beyond the needle itself
-    public float castAheadLength = 0.02f;
+    public float castAheadLength = 0.01f;
 
     //public HapticAxialConstraint axialConstraint;
     public Ray needleRay;
@@ -33,12 +33,13 @@ public class NeedleBehaviour : MonoBehaviour
     public bool isPuncturing = false;
 
     // Use this for initialization
-    void Start () {
+    void Start()
+    {
         needleRay = new Ray();
     }
 
-	// Update is called once per frame
-	void Update ()
+    // Update is called once per frame
+    void Update()
     {
         float castLength = needleLength + castAheadLength;
 
@@ -53,41 +54,49 @@ public class NeedleBehaviour : MonoBehaviour
 
         //ensure only haptic objects are evaluated, and sort them by distance
         ArrayList sortedHits = SortAndFilterPenetrations(hits);
-        
+
         punctureData.collisions = new NeedlePuncture[sortedHits.Count];
 
         for (int i = 0; i < sortedHits.Count; i++)
         {
             NeedlePuncture materialEntry;
             RaycastHit hit = (RaycastHit)sortedHits[i];
-        
+
             if (i == 0) // for the first collision
             {
                 punctureData.entryPoint = hit.point;
                 punctureData.entrySurfaceNormal = hit.normal;
                 materialEntry.depth = 0.0;
-               
+
+
                 // move the constraint position as long as the needle is not inside anything
-                if(!isPuncturing)
+                if (!isPuncturing) // they ray casts a little farther than the needle itself
                 {
                     constraint.transform.position = punctureData.entryPoint;
-                }
-                isPuncturing = true;
-                constraint.constraintEnabled = true;
+                    HapticNativePlugin.SetHapticEntryPoint(punctureData.entryPoint, constraint.transform.forward);
 
-            } else
+                    if (hit.distance < needleLength) // if needle has hit the skin
+                    {
+                        isPuncturing = true;
+                        constraint.constraintEnabled = true;
+                    }
+                }
+
+            }
+            else
             {
                 materialEntry.depth = hit.distance - ((RaycastHit)sortedHits[0]).distance;  // depth of penetration
             }
-        
+
             punctureData.collisions[i] = materialEntry;
         }
 
 
-        // debug drawing
-        if(sortedHits.Count > 0)
+        if (sortedHits.Count > 0)
         {
             Vector3 entryPoint = punctureData.entryPoint;
+
+            // debug drawing
 
             // unpenetrating portion
             Debug.DrawLine(needleRay.origin,
@@ -100,10 +109,11 @@ public class NeedleBehaviour : MonoBehaviour
                 Color.red);
 
             // surface normal
-            Debug.DrawRay(entryPoint, 
-                punctureData.entrySurfaceNormal * 0.01f, 
+            Debug.DrawRay(entryPoint,
+                punctureData.entrySurfaceNormal * 0.01f,
                 Color.yellow);
-        } else
+        }
+        else
         {
             isPuncturing = false;
             constraint.constraintEnabled = false;
@@ -129,7 +139,7 @@ public class NeedleBehaviour : MonoBehaviour
             //    Debug.Log("skin collision!");
             //}
         }
-        
+
         //hitList.Sort();
 
         return hitList;
