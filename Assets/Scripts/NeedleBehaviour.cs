@@ -73,7 +73,6 @@ public class NeedleBehaviour : MonoBehaviour
                 if (!isPuncturing) // they ray casts a little farther than the needle itself
                 {
                     constraint.transform.position = punctureData.entryPoint;
-                    HapticNativePlugin.SetHapticEntryPoint(punctureData.entryPoint, constraint.transform.forward);
 
                     if (hit.distance < needleLength) // if needle has hit the skin
                     {

@@ -911,7 +911,7 @@ namespace NeedleSimPlugin
 		// add material
 		HapticLayer skin = HapticLayer();
 		skin.m_restingDepth = 0.0;
-		skin.m_frictionForce = 3.0;
+		skin.m_maxFrictionForce = 4.0;
 		skin.setStiffnessByExponentAndDistance(1.5, 0.012, 8.0);
 
 		m_layerMaterials.push_back(skin);
@@ -964,9 +964,10 @@ namespace NeedleSimPlugin
 			auto layer = &m_layerMaterials[layerIdx];
 
 			if (m_lastLayerPenetrated >= layerIdx)
-			{
-				// penetrated behaviour
-				double force = 0.0; // Joss TODO: compute this force
+			{ // penetrated behaviour
+
+				double displacement = penetrationDepth - (layer->m_restingDepth + layer->m_displacementPoint);
+				double force = layer->computeFrictionForce(displacement); // Joss TODO: compute this force
 
 				// if behind the material's depth
 				if (penetrationDepth < layer->m_restingDepth)
@@ -983,8 +984,7 @@ namespace NeedleSimPlugin
 				//PRINTLN("inside layer" + layerIdx)
 			}
 			else
-			{
-				// not-yet-penetrated behaviour
+			{ // not-yet-penetrated behaviour
 
 				double displacement = penetrationDepth - layer->m_restingDepth;
 
@@ -1009,19 +1009,20 @@ namespace NeedleSimPlugin
 			}
 		}
 
-		cVector3d outputForce = -m_entryDirection;
+		cVector3d outputForce = m_entryDirection;
 		outputForce.normalize();
-		outputForce.mul(netForceMagnitude);
+		outputForce.mul(-netForceMagnitude);
 
 		return outputForce;
 	}
 	HapticLayer::HapticLayer()
 	{
 		m_stiffnessExponent = 1.0;
-		m_frictionForce = 0.1;
+		m_maxFrictionForce = 0.1;
 		m_penetrationThreshold = 1.0;
 		m_displacementPoint = 0.0;
 		m_restingDepth = 0.0;
+		m_mass = 100.0;
 	}
 	double HapticLayer::computeTensionForce(const double& displacement)
 	{
@@ -1031,6 +1032,33 @@ namespace NeedleSimPlugin
 		if (displacement > 0.0)
 		{
 			outputForce = min(m_stiffness * std::pow(displacement, m_stiffnessExponent), m_penetrationThreshold);
+		}
+
+		return outputForce;
+	}
+
+	double HapticLayer::computeFrictionForce(const double & displacement)
+	{
+		// compute the resistance force.
+
+		double distance = abs(displacement); //pow function needs to take a positive number
+		double absoluteForce = m_stiffness * std::pow(distance, m_stiffnessExponent);
+
+		// the force was calculated with an absolute value. Reverse if needed.
+		double outputForce = (displacement < 0.0) ? -min(absoluteForce, m_maxFrictionForce) : min(absoluteForce, m_maxFrictionForce);
+
+		// if force is greater than the maximum friction force, the layer's contact point may move.
+		if (absoluteForce > 0.1)//m_maxFrictionForce)
+		{
+			// positive direction is inward, negative direction is outward
+			
+			// don't bother with acceleration. force turns directly into velocity
+			double velocity = (outputForce / m_mass);
+
+
+
+			// move the layer accordingly
+			m_displacementPoint += velocity * deltaTime;
 		}
 
 		return outputForce;

@@ -52,9 +52,8 @@ namespace NeedleSimPlugin
 			// caps at penetration threshold; will not output any higher than that
 			double computeTensionForce(const double& displacement);
 
-			// force applied after penetration 
-			// Joss TODO:
-			// double computeFrictionForce(const double& contactDepth);
+			// force applied after penetration. implements a mass-spring model where the contact point can move
+			double computeFrictionForce(const double& displacement);
 
 			//bool m_penetrated;
 
@@ -74,9 +73,9 @@ namespace NeedleSimPlugin
 			double m_penetrationThreshold; // maximum force before penetration
 			
 			//// post-penetration parameters ///////////
-			double m_frictionForce; // max friction force once penetrated
+			double m_maxFrictionForce; // max friction force once penetrated
+			double m_mass;
 
-		private:
 			// where is the layer is in contact with a penetrator such as a needle, relative to its rest position
 			double m_displacementPoint;
 		};
