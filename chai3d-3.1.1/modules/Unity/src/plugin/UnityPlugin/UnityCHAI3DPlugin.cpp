@@ -656,12 +656,33 @@ namespace NeedleSimPlugin
 
 			interactionForce += patient.computeForces(devicePos);
 
+
+			//apply an slight overall damping effect to (hopefully) reduce unwanted oscillations
+			interactionForce += computeDampingEffect(1.0);
+
+			// oscillation failsafe: stop applying forces if velocity is too high
+			if (tool->getDeviceGlobalLinVel().length() > 0.55)
+			{
+				interactionForce *= 0.1;
+				//PRINTLN("oscillation failsafe activated!")
+			}
+
+
+
 			// avoid trying to apply more force than possible
 			interactionForce.clamp(hapticDeviceInfo.m_maxLinearForce);
+
+			// smooth forces by blending between new output and last output
+			if (interactionForce.lengthsq() > 0.001)
+			{
+				interactionForce = lerpd(m_lastForceApplied, interactionForce, 0.5);
+			}
 
 			setDeviceGlobalForce(interactionForce);
 			setDeviceGlobalTorque(globalTorque);
 			setGripperForce(0.0);
+
+			m_lastForceApplied = interactionForce;
 		}
 
 		bool Needle::isForceEngaged()
@@ -671,6 +692,8 @@ namespace NeedleSimPlugin
 
 		Needle::Needle(cWorld * a_parentWorld) : cGenericTool(a_parentWorld)
 		{
+			m_lastForceApplied = 0.0;
+
 			int numPoints = 1;
 			for (int i = 0; i < numPoints; i++)
 			{
@@ -872,6 +895,11 @@ namespace NeedleSimPlugin
 		return springForce;
 	}
 
+	cVector3d computeDampingEffect(const double & kDamping)
+	{
+		return - kDamping * tool->getDeviceGlobalLinVel();
+	}
+
 
 	HapticLayerContainer::HapticLayerContainer()
 	{
@@ -884,7 +912,7 @@ namespace NeedleSimPlugin
 		HapticLayer skin = HapticLayer();
 		skin.m_restingDepth = 0.0;
 		skin.m_frictionForce = 3.0;
-		skin.setStiffnessByExponentAndDistance(2.0, 0.005, 7.0);
+		skin.setStiffnessByExponentAndDistance(1.5, 0.012, 8.0);
 
 		m_layerMaterials.push_back(skin);
 

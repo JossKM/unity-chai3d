@@ -129,7 +129,8 @@ namespace NeedleSimPlugin
 			void computeInteractionForces() override;
 			
 		private:
-			//bool m_isPenetrating = false;
+
+			cVector3d m_lastForceApplied;
 		};
 
 		// a spring that moves. one end, the "head", is attached to the haptic tool, the "tail" is attached to a mass that has static and dynamic friction modelled on it.
@@ -249,4 +250,7 @@ namespace NeedleSimPlugin
 
 	// applies forces parallel to direction
 	inline cVector3d computeAxialSpringForce(cVector3d position, cVector3d& targetPos, cVector3d& targetDir, double& minDist, double& maxDist, double& maxForce, double& kDamping);
+
+	// applies speed damping effect
+	inline cVector3d computeDampingEffect(const double& kDamping);
 }
