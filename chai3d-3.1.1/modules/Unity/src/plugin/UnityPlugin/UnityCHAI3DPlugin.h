@@ -44,7 +44,9 @@ namespace NeedleSimPlugin
 		class HapticLayer
 		{
 		public:
-			HapticLayer(); //m_penetrated = false; }
+			HapticLayer(const double& a_stiffness, const double& a_stiffnessExponent, const double& a_maxFrictionForce, const double& a_penetrationThreshold, const double& a_malleability, const double& a_depth);
+			HapticLayer();
+
 			~HapticLayer() {}
 
 			// force applied before penetration
@@ -55,26 +57,36 @@ namespace NeedleSimPlugin
 			// force applied after penetration. implements a mass-spring model where the contact point can move
 			double computeFrictionForce(const double& displacement);
 
-			//bool m_penetrated;
-
 			// the resting depth of the layer, relative to the entry point of the needle
 			double m_restingDepth; 
 
 			//inline void setProperties(const double& a_stiffness, const double& a_stiffnessExponent, const double& a_penetrationThreshold);
 
 			// sets the scalar m_stiffness such that at a displacement of {distance} units, the maximum force will be achieved.
-			void setStiffnessByExponentAndDistance(double m_stiffnessExponent, double distance, double a_penetrationThreshold);
+			void setStiffnessByExponentAndDistance(double a_stiffnessExponent, double a_distance, double a_penetrationThreshold);
+
+			// called when the layer is penetrated
+			void onEnterLayer();
+
+			// called when leaving the layer
+			void onExitLayer();
+
 
 			//// pre-penetration parameters ///////////
 			
-			// behaviour of the force function. e.g. at 1 it is linear. at 2 it is quadratic. at (0, 1) it is logarithmic. at 0 it is constant
+			// scalar from 0 to inf
 			double m_stiffness;
+
+			// behaviour of the force function. e.g. at 1 it is linear. at 2 it is quadratic. at (0, 1) it is logarithmic. at 0 it is constant
 			double m_stiffnessExponent; 
+			
 			double m_penetrationThreshold; // maximum force before penetration
 			
+
+
 			//// post-penetration parameters ///////////
 			double m_maxFrictionForce; // max friction force once penetrated
-			double m_mass;
+			double m_malleability;
 
 			// where is the layer is in contact with a penetrator such as a needle, relative to its rest position
 			double m_displacementPoint;
@@ -86,7 +98,8 @@ namespace NeedleSimPlugin
 			HapticLayerContainer();
 			~HapticLayerContainer();
 
-			//void initializeLayers(unsigned int numLayers);
+			// create numLayers HapticLayers
+			void initialize(unsigned int numLayers);
 
 		public:
 			inline cVector3d computeForces(cVector3d& devicePosition, double forceScalar = 1.0);
@@ -99,11 +112,18 @@ namespace NeedleSimPlugin
 			// holds the material properties and states
 			std::vector<HapticLayer> m_layerMaterials;
 
+			// set from Unity
 			cVector3d m_entryDirection;
 			cVector3d m_entryPoint;
 
 			// index of the last layer material that was penetrated. During needle insertion this keeps track of which layers are penetrated and which are not.
 			int m_lastLayerPenetrated; // an index of -1 means no layers are being penetrated
+			
+			// number of layers to iterate through
+			int m_numLayersInUse;
+		
+			bool m_enabled;
+
 		};
 
 		//Custom simulation tool
@@ -212,6 +232,16 @@ namespace NeedleSimPlugin
 		FUNCDLL_API void setHapticEntryPoint(double position[], double direction[]);
 
 
+		FUNCDLL_API void clearHapticLayersFromPatient();
+		FUNCDLL_API void addHapticLayerToPatient(double a_stiffness, double a_stiffnessExponent, double a_maxFrictionForce, double a_penetrationThreshold, double a_resistanceToMovement, double a_depth);
+
+		FUNCDLL_API void setPatientLayersEnabled(bool a_enabled);
+
+		//set the number of layers that are present in the needle's path into the patient
+		FUNCDLL_API void setPatientNumLayersToUse(int a_numLayers);
+
+		FUNCDLL_API void setHapticLayerProperties(int layerIndex, double a_stiffness, double a_stiffnessExponent, double a_maxFrictionForce, double a_penetrationThreshold, double a_resistanceToMovement, double a_depth);
+
 		// Like Unity, Chai3D uses a right handed coordinate system, but -z x y
 		FUNCDLL_API void convertXYZFromCHAI3D(double inputXYZ[]);
 		FUNCDLL_API void convertXYZToCHAI3D(double inputXYZ[]);
@@ -235,6 +265,12 @@ namespace NeedleSimPlugin
 
 	template<typename T, typename R>
 	inline R lerp(T from, T to, double tValue)
+	{
+		return (1.0 - tValue) * from + (tValue * to);
+	}
+
+	template<typename T>
+	inline T lerp(T from, T to, double tValue)
 	{
 		return (1.0 - tValue) * from + (tValue * to);
 	}

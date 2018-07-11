@@ -233,4 +233,19 @@ public class HapticNativePlugin
 
     [DllImport("UnityPlugin")]
     public static extern void addMembraneEffect(int objectID, double a_resistance, double a_friction_static, double a_friction_dynamic, double maxForce, double distanceToMaxForce, double a_springMass, double a_penetrationThreshold);
+
+    [DllImport("UnityPlugin")]
+    public static extern void clearHapticLayersFromPatient();
+
+    [DllImport("UnityPlugin")]
+    public static extern void addHapticLayerToPatient(double a_stiffness, double a_stiffnessExponent, double a_maxFrictionForce, double a_penetrationThreshold, double a_resistanceToMovement, double a_depth);
+
+    [DllImport("UnityPlugin")]
+    public static extern void setHapticLayerProperties(int a_layerID, double a_stiffness, double a_stiffnessExponent, double a_maxFrictionForce, double a_penetrationThreshold, double a_resistanceToMovement, double a_depth);
+
+    [DllImport("UnityPlugin")]
+    public static extern void setPatientLayersEnabled(bool a_enabled);
+
+    [DllImport("UnityPlugin")]
+    public static extern void setPatientNumLayersToUse(int a_numLayers);
 }
